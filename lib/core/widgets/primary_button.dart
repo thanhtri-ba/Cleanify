@@ -1,0 +1,103 @@
+import 'package:flutter/material.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_text.dart';
+
+class PrimaryButton extends StatelessWidget {
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.isLoading = false,
+    this.height = 52,
+    this.labelStyle,
+    this.leading,
+    this.trailing,
+    this.prominentShadow = false,
+    this.color = AppColors.primary,
+    this.radius = 16,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+  final bool isLoading;
+  final double height;
+  final TextStyle? labelStyle;
+  final Widget? leading;
+  final Widget? trailing;
+
+  /// Bóng đậm dùng cho nút CTA ở onboarding.
+  final bool prominentShadow;
+  final Color color;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null && !isLoading;
+    final borderRadius = BorderRadius.circular(radius);
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: onPressed == null && !isLoading ? 0.5 : 1,
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: borderRadius,
+            boxShadow: [
+              BoxShadow(
+                color: prominentShadow
+                    ? const Color(0x52625BEE)
+                    : const Color(0x24625BEE),
+                blurRadius: prominentShadow ? 24 : 12,
+                offset: Offset(0, prominentShadow ? 8 : 5),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: borderRadius,
+            child: InkWell(
+              borderRadius: borderRadius,
+              onTap: enabled ? onPressed : null,
+              child: Center(
+                child: isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (leading != null) ...[
+                            leading!,
+                            const SizedBox(width: 8),
+                          ],
+                          Flexible(
+                            child: Text(
+                              label,
+                              style: labelStyle ?? AppText.buttonLabel,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (trailing != null) ...[
+                            const SizedBox(width: 8),
+                            trailing!,
+                          ],
+                        ],
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

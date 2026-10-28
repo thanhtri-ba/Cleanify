@@ -1,0 +1,13 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Google logo" clip-path="url(#clip0_0_7)">
+<path id="Google mark segment" d="M19.6 10.2C19.6 9.5 19.5 8.8 19.4 8.2H10V12H15.4C15.1 13.2 14.4 14.2 13.4 14.9V17.5H16.6C18.5 15.7 19.6 13.2 19.6 10.2Z" fill="#4285F4"/>
+<path id="Google mark segment_2" d="M10 20C12.7 20 15 19.1 16.6 17.5L13.4 14.9C12.5 15.5 11.4 15.9 10 15.9C7.4 15.9 5.2 14.2 4.4 11.8H1V14.4C2.7 17.7 6.1 20 10 20Z" fill="#34A853"/>
+<path id="Google mark segment_3" d="M4.4 11.8C4.03726 10.6283 4.03726 9.37171 4.4 8.2V5.5H1.05303C0.360657 6.89579 0 8.43701 0 10C0 11.563 0.360657 13.1042 1.05303 14.5H4.4V11.8Z" fill="#FBBC05"/>
+<path id="Google mark segment_4" d="M10 4.1764C11.5 4.1764 12.8 4.6554 13.8 5.6134L17 2.64359C15.8451 1.5896 14.4437 0.815575 12.913 0.386119C11.3822 -0.0433367 9.76636 -0.115757 8.20041 0.174904C6.63446 0.465564 5.1638 1.11087 3.91121 2.05696C2.65862 3.00304 1.66044 4.22246 1 5.6134L4.4 8.2C5.2 5.9008 7.4 4.1764 10 4.1764Z" fill="#EA4335"/>
+</g>
+<defs>
+<clipPath id="clip0_0_7">
+<rect width="20" height="20" fill="white"/>
+</clipPath>
+</defs>
+</svg>
