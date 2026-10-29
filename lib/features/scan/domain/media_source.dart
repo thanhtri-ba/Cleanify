@@ -16,6 +16,9 @@ const int lumaGridWidth = 9;
 const int lumaGridHeight = 8;
 const int lumaGridSize = lumaGridWidth * lumaGridHeight;
 
+/// Cạnh ảnh vuông (32x32) để tạo 8 hướng xoay/lật trước khi băm.
+const int lumaSquareSize = 32;
+
 abstract interface class MediaSource {
   /// Tổng số ảnh + video truy cập được.
   Future<int> count();
@@ -26,7 +29,8 @@ abstract interface class MediaSource {
   /// Dung lượng file (byte) hoặc null nếu không đọc được.
   Future<int?> sizeOf(MediaItem item);
 
-  /// Lưới độ sáng 9x8 (72 giá trị 0..255) của ảnh thu nhỏ, hoặc null.
+  /// Ảnh thu nhỏ vuông 32x32 (1024 giá trị độ sáng 0..255), hoặc null.
+  /// Vẫn chấp nhận lưới 9x8 (72 giá trị) để tương thích dữ liệu cũ.
   Future<List<int>?> lumaGrid(MediaItem item);
 
   /// Giải phóng file tạm đã sinh ra khi đo (nếu có).

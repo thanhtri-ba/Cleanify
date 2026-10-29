@@ -2,18 +2,25 @@ import 'dart:math' as math;
 
 import 'media_item.dart';
 import 'media_source.dart';
+import 'near_duplicate_index.dart';
 import 'perceptual_hash.dart';
 import 'scan_models.dart';
+import 'union_find.dart';
 
 class _CancelledSignal implements Exception {
   const _CancelledSignal();
 }
 
 class _Hashed {
-  const _Hashed(this.item, this.hash);
+  const _Hashed(this.item, this.variants);
 
   final MediaItem item;
-  final ImageHash hash;
+
+  /// Hash của ảnh theo 8 hướng (hoặc 1 hướng với dữ liệu 9x8 cũ). Phần tử đầu
+  /// là hướng gốc, dùng cho so trùng hoàn toàn.
+  final List<ImageHash> variants;
+
+  ImageHash get hash => variants.first;
 }
 
 /// Quét thư viện theo các giai đoạn:
@@ -24,6 +31,11 @@ class _Hashed {
 ///
 /// "Ảnh trùng" = cùng dHash, cùng kích thước ảnh và cùng dung lượng file.
 /// Đây là heuristic rất chặt nhưng KHÔNG phải so sánh từng byte.
+///
+/// "Ảnh tương tự" gom theo hai cách: (1) ảnh chụp gần nhau trong cửa sổ thời
+/// gian, khoảng cách Hamming <= `similarMaxDistance`; (2) nếu bật
+/// `globalMaxDistance`, mọi ảnh trong thư viện cùng tỉ lệ khung hình có khoảng
+/// cách rất nhỏ, tìm bằng chỉ mục nhiều đoạn thay vì so mọi cặp.
 class MediaScanner {
   MediaScanner(this.source, {this.config = const ScanConfig()});
 
@@ -153,8 +165,11 @@ class MediaScanner {
         photos,
         (item) async {
           final luma = await source.lumaGrid(item);
-          if (luma != null && luma.length == lumaGridSize) {
-            hashed.add(_Hashed(item, dHash(luma)));
+          if (luma == null) return true;
+          if (luma.length == lumaSquareSize * lumaSquareSize) {
+            hashed.add(_Hashed(item, orientationHashes(luma)));
+          } else if (luma.length == lumaGridSize) {
+            hashed.add(_Hashed(item, [dHash(luma)]));
           }
           return true;
         },
@@ -197,7 +212,7 @@ class MediaScanner {
       // 6. Ảnh tương tự: chọn "hạt giống" rồi gom các ảnh gần nó trong cửa sổ thời gian.
       final pool = hashed.where((h) => !inDuplicates.contains(h.item.id)).toList();
       final used = List<bool>.filled(pool.length, false);
-      final clusters = <List<MediaItem>>[];
+      var clusters = <List<MediaItem>>[];
       for (var i = 0; i < pool.length; i++) {
         if (i % 200 == 0) {
           check();
@@ -209,7 +224,8 @@ class MediaScanner {
           final gap = pool[j].item.createdAt.difference(pool[i].item.createdAt);
           if (gap > config.similarWindow) break;
           if (used[j]) continue;
-          if (pool[i].hash.distanceTo(pool[j].hash) <= config.similarMaxDistance) {
+          if (orientationDistance(pool[i].variants, pool[j].hash) <=
+              config.similarMaxDistance) {
             members.add(pool[j].item);
             used[j] = true;
           }
@@ -218,6 +234,9 @@ class MediaScanner {
           used[i] = true;
           clusters.add(members);
         }
+      }
+      if (config.globalMaxDistance > 0) {
+        clusters = await _mergeAcrossTime(pool, clusters, check);
       }
       fraction = 0.90;
       emit();
@@ -245,6 +264,65 @@ class MediaScanner {
     } catch (e) {
       return finish(ScanEnd.interrupted, e.toString());
     }
+  }
+
+  /// Gộp thêm các ảnh rất giống nhau nhưng chụp/lưu cách xa nhau về thời gian.
+  /// Giữ nguyên các cụm theo cửa sổ thời gian và nối chúng với ảnh ngoài cửa
+  /// sổ khi khoảng cách Hamming <= `globalMaxDistance`, cùng tỉ lệ khung hình.
+  Future<List<List<MediaItem>>> _mergeAcrossTime(
+    List<_Hashed> pool,
+    List<List<MediaItem>> clusters,
+    void Function() check,
+  ) async {
+    final indexById = <String, int>{
+      for (var i = 0; i < pool.length; i++) pool[i].item.id: i,
+    };
+    final sets = UnionFind(pool.length);
+    for (final cluster in clusters) {
+      final first = indexById[cluster.first.id]!;
+      for (final member in cluster.skip(1)) {
+        sets.union(first, indexById[member.id]!);
+      }
+    }
+
+    final minBits = config.globalMinSetBits;
+    final eligible = <int>[
+      for (var i = 0; i < pool.length; i++)
+        if (pool[i].hash.bitCount >= minBits &&
+            pool[i].hash.bitCount <= 64 - minBits)
+          i,
+    ];
+    final pairs = await findNearDuplicatePairs(
+      [for (final i in eligible) pool[i].hash],
+      maxDistance: config.globalMaxDistance,
+      maxBucketSize: config.globalMaxBucketSize,
+      check: check,
+    );
+    for (final (a, b) in pairs) {
+      final left = eligible[a];
+      final right = eligible[b];
+      if (_sameShape(pool[left].item, pool[right].item)) {
+        sets.union(left, right);
+      }
+    }
+
+    // Gom theo gốc, giữ thứ tự của pool để kết quả ổn định.
+    final byRoot = <int, List<MediaItem>>{};
+    for (var i = 0; i < pool.length; i++) {
+      byRoot.putIfAbsent(sets.find(i), () => []).add(pool[i].item);
+    }
+    return byRoot.values.where((members) => members.length >= 2).toList();
+  }
+
+  /// Cùng tỉ lệ khung hình (sai lệch <= 2%). Ảnh chưa biết kích thước thì
+  /// không được gom theo cách này.
+  static bool _sameShape(MediaItem a, MediaItem b) {
+    if (a.width <= 0 || a.height <= 0 || b.width <= 0 || b.height <= 0) {
+      return false;
+    }
+    final left = a.width * b.height;
+    final right = b.width * a.height;
+    return (left - right).abs() <= 0.02 * math.max(left, right);
   }
 
   Future<void> _release() async {

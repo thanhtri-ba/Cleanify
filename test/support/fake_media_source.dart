@@ -69,6 +69,7 @@ class FakeMediaSource implements MediaSource {
     this.throwOnLuma = false,
     this.throwOnCount = false,
     this.onSizeOf,
+    this.onLuma,
   })  : luma = luma ?? {},
         sizes = sizes ?? {};
 
@@ -78,6 +79,7 @@ class FakeMediaSource implements MediaSource {
   bool throwOnLuma;
   bool throwOnCount;
   Future<void> Function(MediaItem item)? onSizeOf;
+  void Function(MediaItem item)? onLuma;
 
   final List<String> lumaCalls = [];
   int releaseCalls = 0;
@@ -105,6 +107,7 @@ class FakeMediaSource implements MediaSource {
   @override
   Future<List<int>?> lumaGrid(MediaItem item) async {
     lumaCalls.add(item.id);
+    onLuma?.call(item);
     if (throwOnLuma) throw const MediaSourceException('library unavailable');
     return luma[item.id];
   }

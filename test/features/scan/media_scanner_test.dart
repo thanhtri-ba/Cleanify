@@ -262,4 +262,178 @@ void main() {
     expect(source.lumaCalls, isEmpty);
     expect(video('v').kind, MediaKind.video);
   });
+
+  group('so sánh toàn thư viện (globalMaxDistance)', () {
+    const global = ScanConfig(globalMaxDistance: 3);
+
+    test('mặc định tắt: ảnh giống nhau cách xa thời gian không gom', () async {
+      final source = FakeMediaSource(
+        [photo('a'), photo('b', at: const Duration(days: 5))],
+        luma: {
+          'a': lumaForBits(bitsOf(2)),
+          'b': lumaForBits(bitsOf(2, flip: 1)),
+        },
+        sizes: {'a': 2 * mb, 'b': 1 * mb},
+      );
+
+      final outcome = await scan(source);
+
+      expect(outcome.result.similarGroups, isEmpty);
+    });
+
+    test('bật: gom ảnh đã nén lưu lại nhiều ngày sau, giữ bản lớn nhất',
+        () async {
+      final source = FakeMediaSource(
+        [
+          photo('orig', w: 4000, h: 3000),
+          photo('forwarded', w: 1600, h: 1200, at: const Duration(days: 5)),
+        ],
+        luma: {
+          'orig': lumaForBits(bitsOf(2)),
+          'forwarded': lumaForBits(bitsOf(2, flip: 2)),
+        },
+        sizes: {'orig': 6 * mb, 'forwarded': 300 * 1000},
+      );
+
+      final outcome = await scan(source, config: global);
+
+      final group = outcome.result.similarGroups.single;
+      expect(group.items.map((e) => e.id), ['orig', 'forwarded']);
+      expect(group.keeper.id, 'orig');
+      expect(group.reclaimableBytes, 300 * 1000);
+      expect(outcome.result.duplicateGroups, isEmpty);
+    });
+
+    test('khoảng cách 4 bit vượt giới hạn 3: không gom', () async {
+      final source = FakeMediaSource(
+        [photo('a'), photo('b', at: const Duration(days: 5))],
+        luma: {
+          'a': lumaForBits(bitsOf(2)),
+          'b': lumaForBits(bitsOf(2, flip: 4)),
+        },
+        sizes: {'a': 2 * mb, 'b': 1 * mb},
+      );
+
+      final outcome = await scan(source, config: global);
+
+      expect(outcome.result.similarGroups, isEmpty);
+    });
+
+    test('khác tỉ lệ khung hình: không gom', () async {
+      final source = FakeMediaSource(
+        [
+          photo('landscape', w: 1000, h: 800),
+          photo('portrait', w: 800, h: 1000, at: const Duration(days: 5)),
+        ],
+        luma: {
+          'landscape': lumaForBits(bitsOf(2)),
+          'portrait': lumaForBits(bitsOf(2, flip: 1)),
+        },
+        sizes: {'landscape': 2 * mb, 'portrait': 1 * mb},
+      );
+
+      final outcome = await scan(source, config: global);
+
+      expect(outcome.result.similarGroups, isEmpty);
+    });
+
+    test('ảnh gần như phẳng (hash toàn 0 hoặc toàn 1) bị loại khỏi so toàn cục',
+        () async {
+      final source = FakeMediaSource(
+        [
+          photo('dark1'),
+          photo('dark2', at: const Duration(days: 5)),
+          photo('white1', at: const Duration(days: 9)),
+          photo('white2', at: const Duration(days: 12)),
+        ],
+        luma: {
+          'dark1': lumaForBits(bitsOf(0)),
+          'dark2': lumaForBits(bitsOf(0)),
+          'white1': lumaForBits(bitsOf(1)),
+          'white2': lumaForBits(bitsOf(1)),
+        },
+        sizes: {
+          'dark1': 1 * mb,
+          'dark2': 2 * mb,
+          'white1': 3 * mb,
+          'white2': 4 * mb,
+        },
+      );
+
+      final outcome = await scan(source, config: global);
+
+      expect(outcome.result.similarGroups, isEmpty);
+    });
+
+    test('nối cụm theo cửa sổ thời gian với ảnh ngoài cửa sổ thành một nhóm',
+        () async {
+      final source = FakeMediaSource(
+        [
+          photo('a'),
+          photo('b', at: const Duration(minutes: 1)),
+          photo('c', at: const Duration(days: 3)),
+          photo('unrelated', at: const Duration(days: 4)),
+        ],
+        luma: {
+          'a': lumaForBits(bitsOf(2)),
+          'b': lumaForBits(bitsOf(2, flip: 1)),
+          'c': lumaForBits(bitsOf(2, flip: 2)),
+          'unrelated': lumaForBits(bitsOf(2, flip: 30)),
+        },
+        sizes: {'a': 3 * mb, 'b': 2 * mb, 'c': 1 * mb, 'unrelated': 4 * mb},
+      );
+
+      final outcome = await scan(source, config: global);
+
+      final group = outcome.result.similarGroups.single;
+      expect(group.items.map((e) => e.id).toSet(), {'a', 'b', 'c'});
+      expect(outcome.result.itemsOf(ScanCategory.similar).map((e) => e.id),
+          isNot(contains('unrelated')));
+    });
+
+    test('ảnh trùng y hệt vẫn nằm ở danh mục trùng, không lặp sang tương tự',
+        () async {
+      final source = FakeMediaSource(
+        [
+          photo('a'),
+          photo('b', at: const Duration(days: 2)),
+          photo('c', at: const Duration(days: 4)),
+        ],
+        luma: {
+          'a': lumaForBits(bitsOf(2)),
+          'b': lumaForBits(bitsOf(2)),
+          'c': lumaForBits(bitsOf(2, flip: 1)),
+        },
+        sizes: {'a': 5 * mb, 'b': 5 * mb, 'c': 2 * mb},
+      );
+
+      final outcome = await scan(source, config: global);
+
+      expect(outcome.result.duplicateGroups.single.items.map((e) => e.id),
+          ['a', 'b']);
+      // 'c' chỉ còn một mình trong nhóm tương tự nên không tạo nhóm.
+      expect(outcome.result.similarGroups, isEmpty);
+    });
+
+    test('hủy trong lúc so toàn cục: cancelled', () async {
+      final cancel = CancelToken();
+      final source = FakeMediaSource(
+        [photo('a'), photo('b', at: const Duration(days: 5))],
+        luma: {
+          'a': lumaForBits(bitsOf(2)),
+          'b': lumaForBits(bitsOf(2, flip: 1)),
+        },
+        sizes: {'a': 2 * mb, 'b': 1 * mb},
+      );
+      // Hủy ngay sau khi băm xong ảnh cuối.
+      source.onLuma = (item) {
+        if (item.id == 'b') cancel.cancel();
+      };
+
+      final outcome = await scan(source, cancel: cancel, config: global);
+
+      expect(outcome.end, ScanEnd.cancelled);
+      expect(outcome.result.completed, isNot(contains(ScanCategory.similar)));
+    });
+  });
 }

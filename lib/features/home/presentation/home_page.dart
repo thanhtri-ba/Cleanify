@@ -56,10 +56,15 @@ class HomePage extends ConsumerWidget {
       backgroundColor: AppColors.canvas,
       body: Column(
         children: [
-          _Header(onBell: () => context.push(AppRoutes.notifications)),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+              // Chừa chỗ cho thanh trạng thái vì Home không còn header.
+              padding: EdgeInsets.fromLTRB(
+                20,
+                MediaQuery.paddingOf(context).top + 20,
+                20,
+                16,
+              ),
               child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -148,164 +153,6 @@ class HomePage extends ConsumerWidget {
       ),
     );
   }
-}
-
-// ───────────────────────── Header ─────────────────────────
-
-class _Header extends StatelessWidget {
-  const _Header({required this.onBell});
-
-  final VoidCallback onBell;
-
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top;
-    return ColoredBox(
-      color: AppColors.canvas,
-      child: Container(
-          height: 68 + top,
-          padding: EdgeInsets.fromLTRB(20, 12 + top, 20, 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF374151), Color(0xFF111827)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Center(
-                      child: AppSvg(
-                        AppAssets.broom,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppStrings.appName,
-                    style: AppText.custom(18, FontWeight.w600, AppColors.titleInk,
-                        lineHeight: 24, letterSpacing: -0.45),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Semantics(
-                    button: true,
-                    label: AppStrings.recentNotifications,
-                    excludeSemantics: true,
-                    child: InkWell(
-                      customBorder: const CircleBorder(),
-                      onTap: onBell,
-                      child: const _BellIcon(),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const _Avatar(),
-                ],
-              ),
-            ],
-          ),
-        ),
-    );
-  }
-}
-
-class _BellIcon extends StatelessWidget {
-  const _BellIcon();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 36,
-      height: 36,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        border: Border.all(color: AppColors.borderNeutral),
-      ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const AppSvg(AppAssets.bell, size: 16.67, color: AppColors.titleInk),
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                color: AppColors.accentDeep,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Avatar minh hoạ tự vẽ (chưa có ảnh người dùng).
-class _Avatar extends StatelessWidget {
-  const _Avatar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0x66D1D5DB)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: CustomPaint(painter: _AvatarPainter()),
-    );
-  }
-}
-
-class _AvatarPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final k = size.width / 32;
-    Paint p(int c) => Paint()..color = Color(c);
-    canvas.drawRect(Offset.zero & size, p(0xFFE9D7C8));
-    canvas.drawPath(
-      Path()
-        ..moveTo(4 * k, 32 * k)
-        ..cubicTo(5 * k, 25 * k, 10 * k, 22 * k, 16 * k, 22 * k)
-        ..cubicTo(22 * k, 22 * k, 27 * k, 25 * k, 28 * k, 32 * k)
-        ..close(),
-      p(0xFFB9BDC9),
-    );
-    canvas.drawOval(
-        Rect.fromCenter(
-            center: Offset(16 * k, 14 * k), width: 12.4 * k, height: 14 * k),
-        p(0xFFF1C9A8));
-    canvas.drawPath(
-      Path()
-        ..moveTo(9.5 * k, 14 * k)
-        ..cubicTo(8.9 * k, 7 * k, 13 * k, 4.5 * k, 16.5 * k, 4.5 * k)
-        ..cubicTo(20 * k, 4.5 * k, 24.1 * k, 7 * k, 23.1 * k, 14 * k)
-        ..cubicTo(22.1 * k, 11 * k, 20.9 * k, 9.6 * k, 17.1 * k, 9.6 * k)
-        ..cubicTo(13.9 * k, 9.6 * k, 11.4 * k, 10.9 * k, 9.5 * k, 14 * k)
-        ..close(),
-      p(0xFF3A2A22),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_AvatarPainter old) => false;
 }
 
 // ───────────────────────── Storage card ─────────────────────────

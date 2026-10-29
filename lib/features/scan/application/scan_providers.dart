@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import '../data/device_storage.dart';
+import '../data/library_size.dart';
+import '../data/simulated_device_storage.dart';
 import '../data/photo_manager_media_source.dart';
 import '../domain/device_storage.dart';
 import '../domain/media_source.dart';
@@ -15,11 +17,22 @@ final mediaSourceProvider =
 final mediaDeleterProvider =
     Provider<MediaDeleter>((ref) => const PhotoManagerMediaDeleter());
 
-final deviceStorageSourceProvider =
-    Provider<DeviceStorageSource>((ref) => const DiskSpaceStorageSource());
+/// Bật giả lập dung lượng iPhone 11 64 GB trên simulator:
+/// `flutter run --dart-define=SIMULATED_STORAGE=true`.
+const _simulateStorage = bool.fromEnvironment('SIMULATED_STORAGE');
+
+final librarySizerProvider = Provider<LibrarySizer>((ref) => LibrarySizer());
+
+final deviceStorageSourceProvider = Provider<DeviceStorageSource>((ref) {
+  if (!_simulateStorage) return const DiskSpaceStorageSource();
+  final sizer = ref.read(librarySizerProvider);
+  return SimulatedDeviceStorageSource(libraryBytes: sizer.bytes);
+});
 
 /// Cấu hình quét. Màn Scan Preferences sẽ ghi đè provider này.
-final scanConfigProvider = Provider<ScanConfig>((ref) => const ScanConfig());
+final scanConfigProvider = Provider<ScanConfig>(
+  (ref) => const ScanConfig(globalMaxDistance: 3),
+);
 
 final deviceStorageProvider = FutureProvider.autoDispose<DeviceStorage>(
   (ref) => ref.watch(deviceStorageSourceProvider).read(),

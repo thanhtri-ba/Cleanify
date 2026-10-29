@@ -118,3 +118,11 @@ git push -u origin main
 - Chưa nối: Large Videos, App Manager, Storage Analysis, Recent activity, chuông thông báo (các lô sau).
 - Cần dọn tay: `rm lib/features/home/presentation/home_placeholder_page.dart` (không còn dùng).
 - Việc kiểm tra: `flutter pub get && flutter analyze && flutter test`, rồi chạy thật trên máy có ảnh.
+
+## Trạng thái lô 3 (so ảnh tương tự toàn thư viện) — CHƯA biên dịch, CHƯA chạy test
+- Thêm `union_find.dart`, `near_duplicate_index.dart` (chỉ mục 4 đoạn 16 bit, đảm bảo tìm đủ cặp cách nhau <= 3 bit), `ImageHash.bitCount`.
+- `MediaScanner`: nếu `ScanConfig.globalMaxDistance > 0`, nối cụm theo cửa sổ thời gian với ảnh ngoài cửa sổ (cùng tỉ lệ khung hình, bỏ ảnh gần phẳng). Mặc định 0 = tắt, nên test cũ giữ nguyên.
+- `scanConfigProvider` bật `globalMaxDistance: 3`. Muốn quay lại hành vi cũ: đổi về `const ScanConfig()`.
+- Test mới: `union_find_test`, `near_duplicate_index_test` (so với vét cạn), nhóm "so sánh toàn thư viện" trong `media_scanner_test`.
+- Việc kiểm tra: `flutter pub get && flutter analyze && flutter test`, rồi quét thật trên máy có ảnh và xem có nhóm sai không (hiệu chỉnh `globalMaxDistance` 1..3).
+- Chưa làm: SHA-256 xác nhận trùng y hệt, lưu hash vào SQLite để quét tăng dần, PDQ qua FFI, SSIM / ORB.

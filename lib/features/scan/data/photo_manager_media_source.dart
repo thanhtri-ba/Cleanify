@@ -116,8 +116,8 @@ class PhotoManagerMediaSource implements MediaSource {
   static Future<List<int>?> _decodeLuma(Uint8List bytes) async {
     final codec = await ui.instantiateImageCodec(
       bytes,
-      targetWidth: lumaGridWidth,
-      targetHeight: lumaGridHeight,
+      targetWidth: lumaSquareSize,
+      targetHeight: lumaSquareSize,
     );
     try {
       final frame = await codec.getNextFrame();
@@ -125,8 +125,9 @@ class PhotoManagerMediaSource implements MediaSource {
       try {
         final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
         if (data == null) return null;
+        const pixels = lumaSquareSize * lumaSquareSize;
         final luma = <int>[];
-        for (var i = 0; i < lumaGridSize; i++) {
+        for (var i = 0; i < pixels; i++) {
           final r = data.getUint8(i * 4);
           final g = data.getUint8(i * 4 + 1);
           final b = data.getUint8(i * 4 + 2);
