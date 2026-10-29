@@ -18,6 +18,20 @@ class CleanupPlan {
     return CleanupPlan._(result, Set.unmodifiable(selected), index);
   }
 
+  /// Chỉ chọn các mục trong [ids] mà xóa được (bản nên giữ của mỗi nhóm không
+  /// bao giờ nằm trong tập xóa nên bất biến luôn được giữ).
+  factory CleanupPlan.only(ScanResult result, Set<String> ids) {
+    final index = _Index(result);
+    final allowed = <String>{
+      for (final c in ScanCategory.values) ...index.selectable(c),
+    };
+    return CleanupPlan._(
+      result,
+      Set.unmodifiable(ids.where(allowed.contains).toSet()),
+      index,
+    );
+  }
+
   final ScanResult result;
   final Set<String> selected;
   final _Index _index;
@@ -109,12 +123,18 @@ class _Index {
       }
     }
 
+    // Một mục có thể vừa ở trong nhóm vừa là ảnh chụp màn hình (vd. hai
+    // screenshot giống hệt). Khi đó chỉ áp luật của nhóm, nếu không bản nên
+    // giữ của nhóm sẽ bị chọn xóa qua danh mục kia.
     void addItems(List<MediaItem> list, ScanCategory category) {
       for (final item in list) {
-        items[item.id] = item;
-        categoryOf[item.id] = category;
+        items.putIfAbsent(item.id, () => item);
+        categoryOf.putIfAbsent(item.id, () => category);
       }
     }
+
+    Iterable<String> ungrouped(List<MediaItem> list) =>
+        list.map((i) => i.id).where((id) => !groupOf.containsKey(id));
 
     addGroups(result.duplicateGroups, ScanCategory.duplicates);
     addGroups(result.similarGroups, ScanCategory.similar);
@@ -128,9 +148,9 @@ class _Index {
       _selectable[ScanCategory.similar]!.addAll(g.removable.map((i) => i.id));
     }
     _selectable[ScanCategory.largeVideos]!
-        .addAll(result.largeVideos.map((i) => i.id));
+        .addAll(ungrouped(result.largeVideos));
     _selectable[ScanCategory.screenshots]!
-        .addAll(result.screenshots.map((i) => i.id));
+        .addAll(ungrouped(result.screenshots));
   }
 
   final Map<String, MediaItem> items = {};

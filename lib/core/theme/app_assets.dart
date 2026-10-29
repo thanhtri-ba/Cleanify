@@ -23,7 +23,6 @@ abstract final class AppAssets {
   static const circleCheck = '$_icons/circle_check.svg';
   static const plus = '$_icons/plus.svg';
   static const settings = '$_icons/settings.svg';
-  static const sparkles = '$_icons/sparkles.svg';
   static const bell = '$_icons/bell.svg';
   static const chevronRight = '$_icons/chevron_right.svg';
   static const image = '$_icons/image.svg';
@@ -39,6 +38,14 @@ abstract final class AppAssets {
   static const broom = '$_icons/broom.svg';
   static const warning = '$_icons/warning.svg';
   static const check = '$_icons/check.svg';
+  static const folder = '$_icons/folder.svg';
+  static const scanTarget = '$_icons/scan_target.svg';
+  static const pieChart = '$_icons/pie_chart.svg';
+  static const barChart = '$_icons/bar_chart.svg';
+  static const arrowUpRight = '$_icons/arrow_up_right.svg';
+  static const folderPlus = '$_icons/folder_plus.svg';
+  static const gridDots = '$_icons/grid_dots.svg';
+  static const trash = '$_icons/trash.svg';
 
   static const onboarding1 = '$_images/onboarding_1.png';
   static const onboarding2 = '$_images/onboarding_2.png';

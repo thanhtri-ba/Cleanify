@@ -1,60 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/widgets/info_banner.dart';
-import '../../../core/widgets/page_scaffold.dart';
-import '../../../core/widgets/primary_button.dart';
-import '../../../core/widgets/secondary_button.dart';
-import '../../../core/widgets/state_panel.dart';
+import '../../../core/widgets/app_svg.dart';
 import 'scan_actions.dart';
+import 'widgets/flow_parts.dart';
 
+/// Scan Error: quét lỗi và chưa có kết quả hợp lệ nào.
 class ScanErrorPage extends ConsumerWidget {
   const ScanErrorPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return PageScaffold(
+    return FlowScaffold(
       title: AppStrings.storageScan,
-      onBack: () => goHome(context),
-      stickyFooter: true,
-      footer: Column(
-        mainAxisSize: MainAxisSize.min,
+      onBack: () => context.go(AppRoutes.home),
+      bottom: FlowActionBar(
         children: [
-          PrimaryButton(
+          FlowPrimaryButton(
             label: AppStrings.tryAgain,
-            color: AppColors.violetDeep,
             onPressed: () => restartScan(context, ref),
           ),
-          const SizedBox(height: 8),
-          SecondaryButton(
+          FlowSecondaryButton(
             label: AppStrings.backToScan,
-            onPressed: () => goHome(context),
+            onPressed: () => context.go(AppRoutes.home),
           ),
         ],
       ),
-      children: [
-        const StatePanel(icon: AppAssets.warning),
+      children: staggered([
+        Center(
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: const BoxDecoration(
+              color: AppColors.errorTint,
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: AppSvg(AppAssets.warning, size: 28, color: AppColors.error),
+            ),
+          ),
+        ),
         Column(
           children: [
             Text(
               AppStrings.scanErrorTitle,
-              style: AppText.display,
               textAlign: TextAlign.center,
+              style: AppText.custom(22, FontWeight.w600, AppColors.titleInk,
+                  lineHeight: 28, letterSpacing: -0.4),
             ),
             const SizedBox(height: 6),
             Text(
               AppStrings.scanErrorBody,
-              style: AppText.body,
               textAlign: TextAlign.center,
+              style: AppText.custom(14, FontWeight.w400, AppColors.textBody,
+                  lineHeight: 20),
             ),
           ],
         ),
-        const InfoBanner(message: AppStrings.scanErrorSafe),
-      ],
+        const InfoCard(
+          title: AppStrings.scanInterrupted,
+          body: AppStrings.scanErrorSafe,
+        ),
+      ]),
     );
   }
 }

@@ -39,7 +39,6 @@ dl assets/icons/plus.svg         e6514fb3-3b5a-4891-9ec7-b473c44f6864.svg
 dl assets/icons/settings.svg     8a68aaf0-9a91-4787-881f-cd707db98e4d.svg
 
 # Lô 2: Home và luồng quét
-dl assets/icons/sparkles.svg       6ed1f336-f8e9-4cf4-9f28-5eed456e6b34.svg
 dl assets/icons/bell.svg           cef2daeb-15cb-4d1d-bb49-0e22134c00c0.svg
 dl assets/icons/chevron_right.svg  2289cb92-c587-4099-95b3-81f507f72192.svg
 dl assets/icons/image.svg          b6982585-d7b2-4d80-8b0f-1de5d9d441a4.svg
@@ -55,5 +54,20 @@ dl assets/icons/check_white.svg    3ba7b242-7856-433b-a5c5-68a3a0ee56b7.svg
 dl assets/icons/broom.svg          7ffcff00-ed92-4f56-bf14-922034e0ca33.svg
 dl assets/icons/warning.svg        7977b2c9-50b1-45d5-bcc0-e3a0ff953e37.svg
 dl assets/icons/check.svg          05496ad3-73f3-411b-b75a-3205221f36c2.svg
+
+# Lô 3: màn Access your files (URL hết hạn 2026-11-04)
+dl assets/icons/folder.svg b862163f-e52b-4e15-b179-376f5d65ea22.svg
+
+
+# Lô 4: Home (hết hạn ~2026-11-04; các file này thay bản vẽ tạm cùng tên)
+dl assets/icons/bell.svg            666967ce-83c7-4238-8ad0-66872027955d.svg
+dl assets/icons/chevron_right.svg   1f1821a2-9289-445a-a9a5-ca968f109d7d.svg
+dl assets/icons/search.svg          6f5a838b-32b9-4d13-b076-98008a9449fa.svg
+dl assets/icons/image.svg           056ae557-4fe0-4683-bfb1-a5c97677e55a.svg
+dl assets/icons/more_horizontal.svg bb56dc07-0f06-4758-8506-3614e3f552df.svg
+dl assets/icons/file_text.svg       fbe18f3d-77b7-4a70-949a-583687bde101.svg
+dl assets/icons/layers.svg          44ef3de7-d0ef-4c22-ac56-7c711279b42e.svg
+dl assets/icons/database.svg        e256a49d-c601-4da5-956d-b4b78b46f863.svg
+dl assets/icons/home.svg            b9e46862-d959-4745-a2e7-0f29e525c604.svg
 
 echo "Xong: $(ls assets/icons | grep -c svg) icon, $(ls assets/images | grep -c png) ảnh."

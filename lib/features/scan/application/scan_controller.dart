@@ -113,6 +113,13 @@ class CleanupPlanNotifier extends Notifier<CleanupPlan?> {
 
   void reset(ScanResult result) => state = CleanupPlan.all(result);
 
+  /// Chọn đúng các mục [ids] (các màn Duplicate Photos / Large Files dùng trước
+  /// khi chuyển sang Review Cleanup).
+  void selectOnly(Set<String> ids) {
+    final plan = state;
+    if (plan != null) state = CleanupPlan.only(plan.result, ids);
+  }
+
   void toggleCategory(ScanCategory category) {
     final plan = state;
     if (plan != null) state = plan.toggleCategory(category);

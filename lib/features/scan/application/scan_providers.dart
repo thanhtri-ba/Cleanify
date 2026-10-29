@@ -51,3 +51,7 @@ final thumbnailProvider =
     return null;
   }
 });
+
+/// Phân bổ dung lượng theo nhóm. Chưa có nguồn dữ liệu nên luôn null; khi có
+/// (vd. qua platform channel) chỉ cần thay provider này.
+final storageBreakdownProvider = Provider<StorageBreakdown?>((ref) => null);

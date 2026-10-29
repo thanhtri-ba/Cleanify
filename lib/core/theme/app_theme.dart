@@ -16,7 +16,7 @@ abstract final class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       fontFamily: AppText.fontFamily,
-      scaffoldBackgroundColor: const Color(0xFFF7F8FC),
+      scaffoldBackgroundColor: const Color(0xFFFFFFFF),
       textSelectionTheme: const TextSelectionThemeData(
         cursorColor: AppColors.primary,
       ),

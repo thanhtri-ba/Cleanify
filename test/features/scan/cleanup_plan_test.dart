@@ -131,4 +131,41 @@ void main() {
       expect(sample().without({'v1'}).completed, ScanCategory.values.toSet());
     });
   });
+
+  test('only: chỉ chọn mục xóa được trong tập đưa vào', () {
+    final plan = CleanupPlan.only(sample(), {'d1b', 'v1', 'khong-ton-tai'});
+
+    expect(plan.selected, {'d1b', 'v1'});
+    expect(plan.bytes, 4 * mb + 200 * mb);
+  });
+
+  test('only: bản nên giữ của nhóm không bao giờ bị chọn', () {
+    final plan = CleanupPlan.only(sample(), {'d1a', 'd1b', 'd1c', 's1a'});
+
+    expect(plan.selected, {'d1b', 'd1c'});
+    expect(plan.isSelected('d1a'), isFalse);
+    expect(plan.isSelected('s1a'), isFalse);
+  });
+
+  test('screenshot trùng nhau: vẫn giữ lại một bản dù danh mục Screenshots chọn hết',
+      () {
+    final a = sized(photo('sc_a', screenshot: true), 1 * mb);
+    final b = sized(photo('sc_b', screenshot: true), 1 * mb);
+    final c = sized(photo('sc_c', screenshot: true), 1 * mb);
+    final result = ScanResult(
+      duplicateGroups: [MediaGroup(id: 'd', items: [a, b])],
+      screenshots: [a, b, c],
+      completed: ScanCategory.values.toSet(),
+    );
+
+    var plan = CleanupPlan.all(result);
+    expect(plan.selected, {'sc_b', 'sc_c'});
+    expect(plan.canSelect('sc_a'), isFalse);
+
+    // Bật/tắt cả danh mục Screenshots cũng không được kéo bản giữ lại vào.
+    plan = plan.toggleCategory(ScanCategory.screenshots);
+    plan = plan.toggleCategory(ScanCategory.screenshots);
+    expect(plan.isSelected('sc_a'), isFalse);
+    expect(plan.toggleItem('sc_a').isSelected('sc_a'), isFalse);
+  });
 }

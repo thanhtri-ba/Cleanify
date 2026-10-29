@@ -111,6 +111,40 @@ abstract final class AppStrings {
   static const homePlaceholderBody = 'Màn Home sẽ được dựng ở mục tiếp theo.';
   static const signOut = 'Sign out';
 
+  // File access
+  static const fileAccessTitle = 'Access your files';
+  static const fileAccessBody =
+      'Cleanify needs access to your files so it can scan for duplicates, large files, and items you may no longer need.';
+  static const fileAccessScope =
+      'This permission only helps with file scanning and cleanup. You can still use other parts of the app without it.';
+  static const fileAccessRowTitle = 'File access permissions';
+  static const fileAccessRowBody =
+      'Needed to scan your files, find duplicates, and show cleanup recommendations.';
+  static const fileAccessNotRequested = 'Not requested';
+  // KHÔNG có trong Figma: nhãn trạng thái sau khi đã xin quyền.
+  static const fileAccessAllowed = 'Allowed';
+  static const fileAccessLimited = 'Limited';
+  static const fileAccessDenied = 'Denied';
+  static const fileAccessNote =
+      'Without this permission, Cleanify can still help with general app settings, storage summaries, and support resources.';
+  static const skipForNow = 'Skip for now';
+
+  // Photo library
+  static const photoLibrary = 'Photo Library';
+  static const photoLibrarySubtitle = 'Browse every photo and video';
+  static String libraryCount(int n) => n == 1 ? '1 item' : '$n items';
+  static const libraryEmptyTitle = 'No photos or videos yet';
+  static const libraryEmptyBody =
+      'Photos and videos on this device will show up here.';
+  static const libraryNoAccessTitle = 'Photo access is off';
+  static const libraryNoAccessBody =
+      'Allow access to browse your photos and videos here.';
+  static const libraryErrorTitle = 'Can\u2019t open your library';
+  static const libraryErrorBody =
+      'Your photo library is temporarily unavailable. Try again in a moment.';
+  static const libraryLoadFailed = 'Couldn\u2019t load this photo.';
+  static const video = 'Video';
+
   // Photo access (section 09)
   static const photoAccessTitle = 'Photos & Videos';
   static const accessIntroTitle = 'Make room for memories';
@@ -189,11 +223,20 @@ abstract final class AppStrings {
   static const storageOverview = 'Storage overview & usage';
   static const noScanYet = 'Run a scan to find duplicate and similar photos.';
   static const noDuplicatesFound = 'No duplicate or similar photos found.';
+  static const scanForJunk = 'Scan for Junk';
+  static const recentNotifications = 'Xem Thông Báo Gần Đây';
+  static const largeFiles = 'Large Files';
+  static String filterLabel(String size) => '>$size filter';
+  static const cleanUp = 'Clean Up';
+  static const deepAudit = 'Deep audit inspection & file history';
+  static const navClean = 'Clean';
+  static const legendPhotos = 'Photos';
+  static const legendVideos = 'Videos';
   static String freeHeadroom(String size) => '$size Free headroom';
   static String moreSets(int n) => '+$n sets';
 
   // Quét
-  static const smartScan = 'Smart Scan';
+  static const smartScan = 'Scan';
   static const scanningTitle = 'Scanning your photos & videos';
   static const scanningSubtitle = 'Analyzing accessible media';
   static const itemsChecked = 'Items checked';
@@ -334,4 +377,103 @@ abstract final class AppStrings {
       'Settings will be available in a later update.';
   static const storagePlaceholderBody =
       'Storage overview will be available in a later update.';
+
+  // ── Màn phụ của Home (Thông báo, Duplicate Photos, Large Files...) ──
+  static const selectAll = 'Chọn tất cả';
+  static const deselectAll = 'Bỏ chọn';
+  static const viewNow = 'Xem ngay';
+  static const scanNowShort = 'Quét ngay';
+  static const rescanShort = 'Quét lại';
+
+  static const notifTitle = 'Thông Báo';
+  static const notifMarkAllRead = 'Đánh dấu đã đọc';
+  static const notifToday = 'Hôm nay';
+  static const notifReminders = 'Nhắc nhở';
+  static const notifEmptyTitle = 'Chưa có thông báo';
+  static const notifEmptyBody = 'Thông báo về quét và dọn dẹp sẽ hiện ở đây.';
+  static const notifCleanupTitle = 'Dọn dẹp hoàn tất';
+  static String notifCleanupBody(int count, String size) =>
+      'Đã dọn $count mục, khoảng $size.';
+  static String notifDuplicatesTitle(int groups) =>
+      'Phát hiện $groups nhóm ảnh trùng';
+  static String notifDuplicatesBody(String size) =>
+      'Có thể giải phóng khoảng $size.';
+  static String notifLargeTitle(int count, String threshold) =>
+      'Có $count video lớn hơn $threshold';
+  static String notifLargeBody(String size) =>
+      'Chiếm $size. Xem lại để xóa các video không cần.';
+  static String notifStorageTitle(int percent) =>
+      'Bộ nhớ đã dùng $percent%';
+  static String notifStorageBody(String free) =>
+      'Chỉ còn $free trống. Nên dọn dẹp sớm.';
+  static const notifReminderTitle = 'Chưa quét trong phiên này';
+  static const notifReminderBody =
+      'Quét để tìm ảnh trùng, video lớn và ảnh chụp màn hình.';
+
+  static const filterAll = 'Tất cả';
+  static const filterExact = 'Giống hệt';
+  static const filterSimilar = 'Tương tự';
+  static String groupsReclaimable(int n) => '$n nhóm · có thể giải phóng';
+  static String groupTitle(int index, int count) => 'Nhóm $index · $count ảnh';
+  static const keepBadge = 'Giữ lại';
+  static const keepBadgeHint = 'Ảnh tốt nhất được giữ lại mặc định';
+  static const pickPhotosToDelete = 'Chọn ảnh để xóa';
+  static String deletePhotos(int n, String size) => 'Xóa $n ảnh · $size';
+  static const dupEmptyTitle = 'Không có ảnh trùng';
+  static const dupNotScannedTitle = 'Chưa có kết quả quét';
+  static const dupNotScannedBody = 'Quét thư viện để tìm ảnh trùng và tương tự.';
+
+  static String largeVideosCount(int n) => '$n video lớn';
+  static const pickVideosToDelete = 'Chọn video để xóa';
+  static String deleteVideos(int n, String size) => 'Xóa $n video · $size';
+  static const largeEmptyTitle = 'Không có video nào';
+  static const largeEmptyBody = 'Không có video nào vượt ngưỡng này.';
+
+  static const appManagerAlbums = 'Theo album';
+  static const appManagerCaption =
+      'album ảnh & video, nhóm theo nguồn';
+  static const appManagerHint =
+      'Hệ điều hành không cho đọc dung lượng bên trong từng ứng dụng. Cleanify nhóm ảnh và video trong thư viện theo album nguồn (WhatsApp, Telegram…) và đếm số mục.';
+  static String albumItems(int n) => '$n mục';
+  static const albumsEmptyTitle = 'Chưa có album';
+  static const albumsEmptyBody = 'Cần quyền truy cập ảnh để liệt kê album.';
+  static const albumsError = 'Không đọc được danh sách album.';
+
+  static const analysisFreeable = 'Có thể giải phóng';
+  static const analysisSuggestions = 'Gợi ý';
+  static const analysisTotalMedia = 'Tổng ảnh & video';
+  static const analysisUsedOfTotal = 'đã dùng';
+  static String analysisFreeOf(String free, String total) =>
+      '$free trống trên $total';
+  static const analysisNoScan =
+      'Quét thư viện để biết bao nhiêu dung lượng có thể giải phóng.';
+  static const suggestDuplicates = 'Xóa ảnh trùng';
+  static const suggestLarge = 'Xem video lớn';
+
+  static const cleanupDetailTitle = 'Dọn Dẹp Hoàn Tất';
+  static const cleanupDetailReclaimed = 'đã được giải phóng';
+  static const cleanupDetailItems = 'Số mục đã dọn';
+  static const cleanupDetailWhere = 'Nơi lưu tạm';
+  static const cleanupDetailWhereIos = 'Recently Deleted';
+  static const cleanupDetailWhereAndroid = 'Trash';
+  static const cleanupDetailEmpty = 'Chưa có lần dọn nào trong phiên này.';
+  static const viewRemainingDuplicates = 'Xem ảnh trùng còn lại';
+
+  static const storageWarnTitle = 'Bộ Nhớ Sắp Đầy';
+  static const storageWarnHeadline = 'Sắp đầy bộ nhớ';
+  static String storageWarnBody(String free, String total) =>
+      'Còn $free trống trên $total. Khi bộ nhớ gần đầy, máy có thể chậm và không lưu được ảnh mới.';
+  static const storageWarnFreeNow = 'Có thể giải phóng ngay';
+  static const storageWarnTotal = 'Tổng có thể thu hồi';
+  static const storageWarnAnalysis = 'Phân tích dung lượng';
+
+  static const reminderTitle = 'Nhắc Quét';
+  static const reminderNever = 'Chưa quét trong phiên này';
+  static const reminderNeverBody =
+      'Quét để cập nhật ảnh trùng, video lớn và ảnh chụp màn hình.';
+  static const reminderDone = 'Đã quét xong';
+  static const reminderDoneBody = 'Bạn có thể quét lại bất cứ lúc nào.';
+  static const reminderInfoTitle = 'Về nhắc nhở';
+  static const reminderInfoBody =
+      'Hiện Cleanify chỉ nhắc trong ứng dụng. Thông báo đẩy định kỳ sẽ có ở bản cập nhật sau.';
 }

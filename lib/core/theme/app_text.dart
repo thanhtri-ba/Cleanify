@@ -1,3 +1,5 @@
+import 'dart:ui' show FontVariation;
+
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -21,8 +23,21 @@ abstract final class AppText {
       color: color,
       height: lineHeight == null ? null : lineHeight / size,
       letterSpacing: letterSpacing,
+      // Inter là variable font: đặt trục wght để đúng độ đậm như Figma.
+      fontVariations: [FontVariation('wght', weight.value.toDouble())],
     );
   }
+
+  /// Style tuỳ biến theo số đo Figma cho các màn có nhiều cỡ chữ riêng (Home...).
+  static TextStyle custom(
+    double size,
+    FontWeight weight,
+    Color color, {
+    double? lineHeight,
+    double? letterSpacing,
+  }) =>
+      _s(size, weight, color,
+          lineHeight: lineHeight, letterSpacing: letterSpacing);
 
   static final h1 = _s(26, FontWeight.w700, AppColors.textPrimary,
       lineHeight: 32, letterSpacing: -0.65);
@@ -56,8 +71,8 @@ abstract final class AppText {
   static final badge = _s(11, FontWeight.w600, AppColors.textSecondary,
       lineHeight: 14, letterSpacing: 0.66);
   static final error = _s(12, FontWeight.w500, AppColors.error, lineHeight: 18);
-  static final pageTitle =
-      _s(18, FontWeight.w600, AppColors.textPrimary);
+  static final pageTitle = _s(18, FontWeight.w600, AppColors.titleInk,
+      lineHeight: 24, letterSpacing: -0.45);
   static final rowTitle =
       _s(14, FontWeight.w600, AppColors.textPrimary, lineHeight: 20);
   static final statusLabel = _s(12, FontWeight.w600, AppColors.primary);
@@ -83,4 +98,16 @@ abstract final class AppText {
   static final accentButton = _s(14, FontWeight.w600, AppColors.accent);
   static final noteBody =
       _s(12, FontWeight.w400, AppColors.textSecondary, lineHeight: 18);
+
+  // Onboarding / File access theo Figma.
+  static final ctaLarge = _s(16, FontWeight.w600, Colors.white,
+      lineHeight: 24, letterSpacing: -0.08);
+  static final fileIntro =
+      _s(14, FontWeight.w400, AppColors.textSecondary, lineHeight: 20);
+  static final fileScope =
+      _s(12, FontWeight.w400, AppColors.textMuted, lineHeight: 16);
+  static final permTitle = _s(15, FontWeight.w500, AppColors.ink);
+  static final permStatus = _s(12, FontWeight.w600, AppColors.textSecondary);
+  static final permPrimary = _s(15, FontWeight.w600, Colors.white);
+  static final permSecondary = _s(15, FontWeight.w500, AppColors.textMuted);
 }

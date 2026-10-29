@@ -16,6 +16,7 @@ class PrimaryButton extends StatelessWidget {
     this.prominentShadow = false,
     this.color = AppColors.primary,
     this.radius = 16,
+    this.shadows,
   });
 
   final String label;
@@ -30,6 +31,9 @@ class PrimaryButton extends StatelessWidget {
   final bool prominentShadow;
   final Color color;
   final double radius;
+
+  /// Ghi đè bóng mặc định (danh sách rỗng = không bóng).
+  final List<BoxShadow>? shadows;
 
   @override
   Widget build(BuildContext context) {
@@ -47,11 +51,11 @@ class PrimaryButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: borderRadius,
-            boxShadow: [
+            boxShadow: shadows ?? [
               BoxShadow(
                 color: prominentShadow
-                    ? const Color(0x52625BEE)
-                    : const Color(0x24625BEE),
+                    ? const Color(0x52111827)
+                    : const Color(0x24111827),
                 blurRadius: prominentShadow ? 24 : 12,
                 offset: Offset(0, prominentShadow ? 8 : 5),
               ),

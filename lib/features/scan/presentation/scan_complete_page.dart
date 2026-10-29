@@ -4,22 +4,17 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/format_bytes.dart';
-import '../../../core/widgets/info_row.dart';
-import '../../../core/widgets/page_scaffold.dart';
-import '../../../core/widgets/primary_button.dart';
-import '../../../core/widgets/secondary_button.dart';
-import '../../../core/widgets/state_panel.dart';
 import '../application/scan_controller.dart';
+import '../application/scan_providers.dart';
 import '../domain/cleanup_plan.dart';
 import '../domain/scan_models.dart';
-import 'scan_actions.dart';
-import 'widgets/scan_labels.dart';
-import 'widgets/scan_widgets.dart';
+import 'widgets/category_meta.dart';
+import 'widgets/flow_parts.dart';
 
+/// Scan Complete: tổng dung lượng có thể giải phóng + chọn danh mục.
 class ScanCompletePage extends ConsumerWidget {
   const ScanCompletePage({super.key});
 
@@ -27,134 +22,109 @@ class ScanCompletePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final outcome = ref.watch(scanControllerProvider).outcome;
     final plan = ref.watch(cleanupPlanProvider);
+    final threshold = formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
+    final result = outcome?.result;
 
-    if (outcome == null || plan == null) {
-      return const _NoResults();
+    void leave() =>
+        context.canPop() ? context.pop() : context.go(AppRoutes.home);
+
+    if (result == null || plan == null) {
+      return FlowScaffold(
+        title: AppStrings.scanComplete,
+        onBack: leave,
+        children: const [SizedBox.shrink()],
+      );
     }
 
-    final result = outcome.result;
-    final notifier = ref.read(cleanupPlanProvider.notifier);
-
-    return PageScaffold(
+    final canReview = !plan.isEmpty;
+    return FlowScaffold(
       title: AppStrings.scanComplete,
-      onBack: () => goHome(context),
-      stickyFooter: true,
-      footer: Column(
-        mainAxisSize: MainAxisSize.min,
+      onBack: leave,
+      bottom: FlowActionBar(
         children: [
-          PrimaryButton(
+          FlowPrimaryButton(
             label: AppStrings.reviewSelection(formatBytes(plan.bytes)),
-            onPressed: plan.isEmpty
-                ? null
-                : () => context.push(AppRoutes.cleanupReview),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            AppStrings.nothingDeletedUntilConfirm,
-            style: AppText.caption,
-            textAlign: TextAlign.center,
+            onPressed:
+                canReview ? () => context.push(AppRoutes.cleanupReview) : null,
           ),
         ],
       ),
-      children: [
-        const StatePanel(icon: AppAssets.circleCheck),
+      children: staggered([
+        const StateBadge(),
         Column(
           children: [
             Text(
               AppStrings.scanCompleteTitle,
-              style: AppText.display,
               textAlign: TextAlign.center,
+              style: AppText.custom(22, FontWeight.w600, AppColors.titleInk,
+                  lineHeight: 28, letterSpacing: -0.4),
             ),
             const SizedBox(height: 6),
             Text(
               AppStrings.scanCompleteBody,
-              style: AppText.body,
               textAlign: TextAlign.center,
+              style: AppText.custom(14, FontWeight.w400, AppColors.textBody,
+                  lineHeight: 20),
             ),
           ],
         ),
-        OutlinedCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(AppStrings.potentialSpace, style: AppText.statLabel),
-              const SizedBox(height: 6),
-              BigBytes(plan.bytes),
-            ],
-          ),
+        CountUpBytes(
+          bytes: plan.bytes,
+          builder: (_, bytes) {
+            final b = splitBytes(bytes);
+            return Column(
+              children: [
+                Text(
+                  AppStrings.potentialSpace,
+                  style: AppText.custom(
+                      12, FontWeight.w500, AppColors.textMuted,
+                      lineHeight: 16),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  b.toString(),
+                  style: AppText.custom(40, FontWeight.w700, AppColors.primary,
+                      lineHeight: 46, letterSpacing: -1),
+                ),
+              ],
+            );
+          },
         ),
-        Text(AppStrings.selectedForReview, style: AppText.sectionTitle),
-        OutlinedCard(
-          child: Column(
-            children: withDividers([
-              for (final c in ScanCategory.values)
-                _row(c, result, plan, notifier),
-            ]),
-          ),
+        GroupCard(
+          children: [
+            for (final c in ScanCategory.values)
+              _row(ref, result, plan, c, threshold),
+          ],
         ),
-      ],
+      ]),
     );
   }
 
-  Widget _row(
-    ScanCategory c,
-    ScanResult result,
-    CleanupPlan plan,
-    CleanupPlanNotifier notifier,
-  ) {
-    final done = result.completed.contains(c);
-    final selectable = plan.selectableIds(c).length;
-    final hasAny = done && selectable > 0;
-    final selected = plan.countFor(c);
-
-    final String hint;
-    if (!done) {
-      hint = AppStrings.notScanned;
-    } else if (result.count(c) == 0) {
-      hint = AppStrings.noneFound;
-    } else {
-      hint = '${formatCount(result.count(c))} · '
-          '${formatBytes(result.bytes(c))}';
-    }
-
+  Widget _row(WidgetRef ref, ScanResult result, CleanupPlan plan, ScanCategory c,
+      String threshold) {
+    final scanned = result.completed.contains(c);
+    final selectable = plan.selectableIds(c).isNotEmpty;
+    final selected = plan.isCategoryFullySelected(c);
     return CategoryRow(
-      icon: categoryIcon(c),
-      title: categoryTitle(c),
-      hint: hint,
-      dimmed: !hasAny,
-      trailing: Checkbox(
-        tristate: true,
-        activeColor: AppColors.primary,
-        value: plan.isCategoryFullySelected(c)
-            ? true
-            : (selected > 0 ? null : false),
-        onChanged: hasAny ? (_) => notifier.toggleCategory(c) : null,
-      ),
-    );
-  }
-}
-
-/// Hiện khi mở màn kết quả mà không còn kết quả quét trong bộ nhớ.
-class _NoResults extends StatelessWidget {
-  const _NoResults();
-
-  @override
-  Widget build(BuildContext context) {
-    return PageScaffold(
-      title: AppStrings.scanComplete,
-      onBack: () => goHome(context),
-      children: [
-        const StatePanel(icon: AppAssets.imageOff),
-        Text(
-          AppStrings.noScanYet,
-          style: AppText.body,
-          textAlign: TextAlign.center,
-        ),
-        SecondaryButton(
-          label: AppStrings.backToHome,
-          onPressed: () => goHome(context),
-        ),
-      ],
+      category: c,
+      height: 56,
+      tile: 34,
+      hint: scanned ? c.resultHint(plan.countFor(c), threshold) : null,
+      onTap: selectable
+          ? () => ref.read(cleanupPlanProvider.notifier).toggleCategory(c)
+          : null,
+      trailing: !scanned
+          ? const RowValue(AppStrings.notScanned, muted: true)
+          : !selectable
+              ? const RowValue(AppStrings.noneFound, muted: true)
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RowValue(formatBytes(plan.bytesFor(c))),
+                    const SizedBox(width: 10),
+                    SelectCheck(selected: selected),
+                  ],
+                ),
     );
   }
 }

@@ -4,14 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/format_bytes.dart';
-import '../../../core/widgets/page_scaffold.dart';
-import '../../../core/widgets/progress_ring.dart';
-import '../../../core/widgets/secondary_button.dart';
 import '../application/cleanup_controller.dart';
-import 'widgets/scan_widgets.dart';
+import 'widgets/flow_parts.dart';
 
+/// Cleaning: tiến độ xóa thật; xong thì sang Cleanup Complete, bị từ chối/lỗi
+/// thì về Review để người dùng quyết định.
 class CleaningPage extends ConsumerStatefulWidget {
   const CleaningPage({super.key});
 
@@ -20,104 +20,146 @@ class CleaningPage extends ConsumerStatefulWidget {
 }
 
 class _CleaningPageState extends ConsumerState<CleaningPage> {
-  bool _left = false;
+  bool _handled = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _handle(ref.read(cleanupControllerProvider));
+    });
   }
 
-  void _sync() {
-    if (!mounted || _left) return;
-    switch (ref.read(cleanupControllerProvider).phase) {
-      case CleanupPhase.running:
-        return;
-      case CleanupPhase.idle:
-        _left = true;
-        context.go(AppRoutes.home);
-      case CleanupPhase.finished:
-        _left = true;
-        context.pushReplacement(AppRoutes.cleanupComplete);
+  void _handle(CleanupState s) {
+    if (_handled || s.phase != CleanupPhase.finished) return;
+    final o = s.outcome;
+    if (o == null) return;
+    _handled = true;
+    if (o.declined) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(
+            content: Text(AppStrings.deletionNotConfirmed)));
+      context.pushReplacement(AppRoutes.cleanupReview);
+    } else {
+      context.pushReplacement(AppRoutes.cleanupComplete);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<CleanupState>(cleanupControllerProvider, (prev, next) {
-      if (next.phase == CleanupPhase.finished &&
-          prev?.phase != CleanupPhase.finished) {
-        _sync();
-      }
-    });
-
+    ref.listen<CleanupState>(cleanupControllerProvider, (_, n) => _handle(n));
     final s = ref.watch(cleanupControllerProvider);
-    final processedCount = (s.fraction * s.selectedCount).round();
+    final waiting = s.fraction == 0 && s.phase == CleanupPhase.running;
 
     return PopScope(
-      // Đang xóa thì không cho thoát bằng nút Back; dùng Pause Cleanup.
       canPop: false,
-      child: PageScaffold(
+      child: FlowScaffold(
         title: AppStrings.cleaningStorage,
-        showBack: false,
-        stickyFooter: true,
-        footer: SecondaryButton(
-          label: s.pausing ? AppStrings.pausing : AppStrings.pauseCleanup,
-          onPressed: s.pausing
-              ? null
-              : () => ref.read(cleanupControllerProvider.notifier).pause(),
-        ),
-        children: [
-          Center(
-            child: ProgressRing(
-              progress: s.fraction,
-              size: 200,
-              strokeWidth: 14,
-              semanticsLabel: AppStrings.cleaningProgress,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('${s.percent}%', style: AppText.bigNumber),
-                  Text(AppStrings.inProgress, style: AppText.statusLabel),
-                ],
-              ),
+        bottom: FlowActionBar(
+          children: [
+            FlowSecondaryButton(
+              label: s.pausing ? AppStrings.pausing : AppStrings.pauseCleanup,
+              onPressed: s.pausing || s.phase != CleanupPhase.running
+                  ? null
+                  : () => ref.read(cleanupControllerProvider.notifier).pause(),
             ),
-          ),
+          ],
+        ),
+        children: staggered([
           Column(
             children: [
               Text(
                 AppStrings.makingRoom,
-                style: AppText.display,
                 textAlign: TextAlign.center,
+                style: AppText.custom(22, FontWeight.w600, AppColors.titleInk,
+                    lineHeight: 28, letterSpacing: -0.4),
               ),
               const SizedBox(height: 6),
               Text(
-                s.fraction == 0
+                waiting
                     ? AppStrings.waitingConfirmation
                     : AppStrings.processingConfirmed,
-                style: AppText.body,
                 textAlign: TextAlign.center,
+                style: AppText.custom(14, FontWeight.w400, AppColors.textBody,
+                    lineHeight: 20),
               ),
             ],
           ),
-          StatRow(
-            stats: [
-              (
-                value: formatCount(processedCount),
-                label: AppStrings.mediaProcessed,
-              ),
-              (
-                value: formatCount(s.selectedCount),
-                label: AppStrings.itemsSelected,
-              ),
-              (
-                value: formatBytes(s.remainingBytes),
-                label: AppStrings.remaining,
+          GroupCard(
+            color: AppColors.iconTile,
+            bordered: false,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppStrings.cleaningProgress,
+                          style: AppText.custom(
+                              12, FontWeight.w500, AppColors.textMuted,
+                              lineHeight: 16),
+                        ),
+                        Text(
+                          AppStrings.inProgress,
+                          style: AppText.custom(
+                              11, FontWeight.w600, AppColors.primary,
+                              lineHeight: 14, letterSpacing: 0.5),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${s.percent}%',
+                      style: AppText.custom(
+                          40, FontWeight.w700, AppColors.primary,
+                          lineHeight: 46, letterSpacing: -1),
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: s.fraction.clamp(0.0, 1.0)),
+                        duration: const Duration(milliseconds: 300),
+                        builder: (_, v, __) => LinearProgressIndicator(
+                          value: v,
+                          minHeight: 8,
+                          backgroundColor: AppColors.surface,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ],
+          GroupCard(
+            children: [
+              _stat(AppStrings.mediaProcessed, formatBytes(s.processedBytes)),
+              _stat(AppStrings.itemsSelected, formatCount(s.selectedCount)),
+              _stat(AppStrings.remaining, formatBytes(s.remainingBytes)),
+            ],
+          ),
+        ]),
       ),
     );
   }
+
+  Widget _stat(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label,
+                style: AppText.custom(14, FontWeight.w400, AppColors.textBody,
+                    lineHeight: 20)),
+            RowValue(value),
+          ],
+        ),
+      );
 }

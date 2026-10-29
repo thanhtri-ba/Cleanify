@@ -22,3 +22,20 @@ class DeviceStorage {
 abstract interface class DeviceStorageSource {
   Future<DeviceStorage> read();
 }
+
+/// Phân bổ thư viện ảnh theo loại (chỉ phần liên quan đến ảnh/video).
+/// Chưa có nguồn dữ liệu nên [storageBreakdownProvider] trả null; khi đó Home
+/// hiện Used/Free.
+class StorageBreakdown {
+  const StorageBreakdown({
+    required this.photosBytes,
+    required this.videosBytes,
+    required this.screenshotsBytes,
+  });
+
+  final int photosBytes;
+  final int videosBytes;
+  final int screenshotsBytes;
+
+  int get totalBytes => photosBytes + videosBytes + screenshotsBytes;
+}

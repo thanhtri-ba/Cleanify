@@ -7,6 +7,31 @@ import 'scan_providers.dart';
 
 enum CleanupPhase { idle, running, finished }
 
+/// Kết quả lần dọn gần nhất (chỉ trong phiên hiện tại), dùng cho thông báo.
+class LastCleanup {
+  const LastCleanup({
+    required this.bytes,
+    required this.count,
+    required this.at,
+    required this.byCategory,
+  });
+
+  final int bytes;
+  final int count;
+  final DateTime at;
+  final Map<ScanCategory, int> byCategory;
+}
+
+class LastCleanupNotifier extends Notifier<LastCleanup?> {
+  @override
+  LastCleanup? build() => null;
+
+  void record(LastCleanup value) => state = value;
+}
+
+final lastCleanupProvider =
+    NotifierProvider<LastCleanupNotifier, LastCleanup?>(LastCleanupNotifier.new);
+
 class CleanupState {
   const CleanupState({
     this.phase = CleanupPhase.idle,
@@ -120,6 +145,12 @@ class CleanupController extends Notifier<CleanupState> {
     );
 
     if (deleted.isNotEmpty) {
+      ref.read(lastCleanupProvider.notifier).record(LastCleanup(
+            bytes: state.deletedBytes,
+            count: deleted.length,
+            at: DateTime.now(),
+            byCategory: byCategory,
+          ));
       ref.read(scanControllerProvider.notifier).removeDeleted(deleted);
     }
   }

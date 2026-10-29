@@ -6,28 +6,34 @@ import '../../application/scan_providers.dart';
 
 /// Ảnh thu nhỏ của một mục trong thư viện. Khi đang tải hoặc không tải được
 /// thì hiện ô nền nhạt, không báo lỗi ra giao diện.
+/// [width] null nghĩa là giãn theo chiều rộng cha.
 class MediaThumbnail extends ConsumerWidget {
   const MediaThumbnail({
     super.key,
     required this.id,
-    this.size = 88,
+    this.width,
+    this.height = 88,
     this.radius = 12,
+    this.requestSize = 240,
   });
 
   final String id;
-  final double size;
+  final double? width;
+  final double height;
   final double radius;
+
+  /// Cạnh ảnh yêu cầu (px), lớn hơn kích thước hiển thị để nét trên màn mật độ cao.
+  final int requestSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Yêu cầu ảnh gấp đôi kích thước hiển thị để nét trên màn mật độ cao.
-    final request = ThumbnailRequest(id, (size * 2).round());
-    final bytes = ref.watch(thumbnailProvider(request)).valueOrNull;
+    final bytes =
+        ref.watch(thumbnailProvider(ThumbnailRequest(id, requestSize))).valueOrNull;
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: SizedBox(
-        width: size,
-        height: size,
+        width: width,
+        height: height,
         child: bytes == null
             ? const ColoredBox(color: AppColors.chip)
             : Image.memory(

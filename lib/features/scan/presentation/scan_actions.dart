@@ -10,25 +10,22 @@ import '../application/scan_controller.dart';
 /// Bắt đầu một lượt quét từ Home. Nếu chưa có quyền ảnh thì mở màn xin quyền
 /// thay vì quét (quét khi không có quyền chỉ cho kết quả rỗng gây hiểu nhầm).
 Future<void> startScanFlow(BuildContext context, WidgetRef ref) async {
-  final access = ref.read(mediaAccessProvider.notifier);
-  await access.refresh();
+  await ref.read(mediaAccessProvider.notifier).refresh();
   if (!context.mounted) return;
 
   final granted = ref.read(mediaAccessProvider).access;
   if (granted != MediaAccess.granted && granted != MediaAccess.limited) {
-    context.push(AppRoutes.photoAccess);
+    context.push(AppRoutes.fileAccess);
     return;
   }
-  // start() đặt trạng thái "đang quét" ngay (đồng bộ) trước khi chờ,
-  // nên màn Smart Scan mở ra luôn thấy trạng thái đúng.
+  // start() đặt trạng thái "đang quét" ngay (đồng bộ), nên Smart Scan mở ra
+  // đã thấy tiến độ thay vì trạng thái cũ.
   ref.read(scanControllerProvider.notifier).start();
   context.push(AppRoutes.scan);
 }
 
-/// Quét lại từ các màn kết quả/lỗi, thay thế màn hiện tại.
+/// Quét lại từ màn kết quả/lỗi: thay màn hiện tại bằng Smart Scan.
 void restartScan(BuildContext context, WidgetRef ref) {
   ref.read(scanControllerProvider.notifier).start();
   context.pushReplacement(AppRoutes.scan);
 }
-
-void goHome(BuildContext context) => context.go(AppRoutes.home);
