@@ -63,7 +63,9 @@ class StorageWarningPage extends ConsumerWidget {
                   RingChart(
                     size: 104,
                     strokeWidth: 12,
-                    segments: [RingSegment(s.usedBytes.toDouble(), AppColors.error)],
+                    segments: [
+                      RingSegment(s.usedBytes.toDouble(), AppColors.error)
+                    ],
                     total: s.totalBytes.toDouble(),
                     center: Text(
                       '$percent%',
@@ -124,13 +126,14 @@ class StorageWarningPage extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     AppStrings.storageWarnTotal,
-                    style:
-                        AppText.custom(13, FontWeight.w400, AppColors.textMuted),
+                    style: AppText.custom(
+                        13, FontWeight.w400, AppColors.textMuted),
                   ),
                 ),
                 Text(
                   formatBytes(dupBytes + largeBytes),
-                  style: AppText.custom(14, FontWeight.w700, AppColors.titleInk),
+                  style:
+                      AppText.custom(14, FontWeight.w700, AppColors.titleInk),
                 ),
               ],
             ),
@@ -171,12 +174,13 @@ class _FreeableTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppText.custom(14, FontWeight.w600, AppColors.titleInk),
+                  style:
+                      AppText.custom(14, FontWeight.w600, AppColors.titleInk),
                 ),
                 Text(
                   caption,
-                  style:
-                      AppText.custom(12.5, FontWeight.w400, AppColors.textMuted),
+                  style: AppText.custom(
+                      12.5, FontWeight.w400, AppColors.textMuted),
                 ),
               ],
             ),
@@ -186,7 +190,8 @@ class _FreeableTile extends StatelessWidget {
             style: AppText.custom(14, FontWeight.w700, AppColors.titleInk),
           ),
           const SizedBox(width: 6),
-          const AppSvg(AppAssets.chevronRight, size: 14, color: AppColors.textMuted),
+          const AppSvg(AppAssets.chevronRight,
+              size: 14, color: AppColors.textMuted),
         ],
       ),
     );

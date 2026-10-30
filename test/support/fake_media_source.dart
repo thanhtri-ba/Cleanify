@@ -1,3 +1,9 @@
+import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:typed_data';
+
+import 'package:cleanify/features/scan/domain/feature_index.dart';
+import 'package:cleanify/features/scan/domain/hash_store.dart';
 import 'package:cleanify/features/scan/domain/media_item.dart';
 import 'package:cleanify/features/scan/domain/media_source.dart';
 
@@ -16,6 +22,7 @@ MediaItem photo(
       width: w,
       height: h,
       createdAt: t0.add(at),
+      modifiedAt: t0.add(at),
       isScreenshot: screenshot,
     );
 
@@ -25,40 +32,51 @@ MediaItem video(String id, {Duration at = Duration.zero}) => MediaItem(
       width: 1920,
       height: 1080,
       createdAt: t0.add(at),
+      modifiedAt: t0.add(at),
     );
 
-/// Tạo lưới độ sáng cho đúng dãy bit mong muốn (bit = trái < phải).
-List<int> lumaForBits(List<int> bits) {
-  assert(bits.length == 64);
-  final luma = <int>[];
-  var k = 0;
-  for (var row = 0; row < lumaGridHeight; row++) {
-    var v = 128;
-    luma.add(v);
-    for (var col = 0; col < lumaGridWidth - 1; col++) {
-      v += bits[k++] == 1 ? 1 : -1;
-      luma.add(v);
-    }
-  }
-  return luma;
+/// Ảnh xám 64x64 phẳng, mọi điểm bằng [v].
+List<int> flatLuma(int v) => List.filled(lumaGridSize, v);
+
+/// Ảnh xám 64x64 có cấu trúc, khác nhau theo [seed] (sóng hình sin).
+List<int> patternLuma(int seed) {
+  final a = 0.10 + 0.03 * (seed % 7);
+  final b = 0.07 + 0.02 * (seed % 5);
+  return [
+    for (var y = 0; y < lumaSide; y++)
+      for (var x = 0; x < lumaSide; x++)
+        (128 + 60 * math.sin(a * x + b * y) + 30 * math.sin(0.05 * x * y / 8))
+            .round()
+            .clamp(0, 255),
+  ];
 }
 
-List<int> bitsOf(int pattern, {int flip = 0}) {
-  // pattern 0: toàn 0; 1: toàn 1; 2: xen kẽ.
-  final bits = List<int>.generate(64, (i) {
-    switch (pattern) {
-      case 0:
-        return 0;
-      case 1:
-        return 1;
-      default:
-        return i % 2;
+/// Nội dung file giả: cùng [tag] thì cùng byte, khác [tag] thì khác byte.
+Uint8List contentBytes(String tag, {int size = 1000}) {
+  final seed = utf8.encode(tag);
+  return Uint8List.fromList([
+    for (var i = 0; i < size; i++) seed[i % seed.length] ^ (i & 0xff),
+  ]);
+}
+
+class InMemoryHashStore implements HashStore {
+  final Map<String, StoredHash> rows = {};
+  int saveCalls = 0;
+
+  @override
+  Future<Map<String, StoredHash>> loadAll() async => Map.of(rows);
+
+  @override
+  Future<void> saveAll(List<StoredHash> batch) async {
+    saveCalls++;
+    for (final r in batch) {
+      rows[r.id] = r;
     }
-  });
-  for (var i = 0; i < flip; i++) {
-    bits[i] = bits[i] == 1 ? 0 : 1;
   }
-  return bits;
+
+  @override
+  Future<void> retainOnly(Set<String> ids) async =>
+      rows.removeWhere((k, _) => !ids.contains(k));
 }
 
 class FakeMediaSource implements MediaSource {
@@ -66,22 +84,33 @@ class FakeMediaSource implements MediaSource {
     this.items, {
     Map<String, List<int>>? luma,
     Map<String, int>? sizes,
+    Map<String, Uint8List>? bytes,
+    Map<String, FeatureSet>? features,
     this.throwOnLuma = false,
     this.throwOnCount = false,
     this.onSizeOf,
     this.onLuma,
   })  : luma = luma ?? {},
-        sizes = sizes ?? {};
+        sizes = sizes ?? {},
+        bytes = bytes ?? {},
+        features = features ?? {};
 
   final List<MediaItem> items;
   final Map<String, List<int>> luma;
   final Map<String, int> sizes;
+
+  /// Nội dung file gốc theo id. Mục không có thì dùng nội dung riêng theo id.
+  final Map<String, Uint8List> bytes;
+
+  /// Đặc trưng ORB theo id; mục không có thì không trích được.
+  final Map<String, FeatureSet> features;
   bool throwOnLuma;
   bool throwOnCount;
   Future<void> Function(MediaItem item)? onSizeOf;
-  void Function(MediaItem item)? onLuma;
+  Future<void> Function(MediaItem item)? onLuma;
 
   final List<String> lumaCalls = [];
+  int openCalls = 0;
   int releaseCalls = 0;
 
   @override
@@ -107,9 +136,18 @@ class FakeMediaSource implements MediaSource {
   @override
   Future<List<int>?> lumaGrid(MediaItem item) async {
     lumaCalls.add(item.id);
-    onLuma?.call(item);
+    await onLuma?.call(item);
     if (throwOnLuma) throw const MediaSourceException('library unavailable');
     return luma[item.id];
+  }
+
+  @override
+  Future<FeatureSet?> featureSet(MediaItem item) async => features[item.id];
+
+  @override
+  Future<Stream<List<int>>?> openOriginal(MediaItem item) async {
+    openCalls++;
+    return Stream.value(bytes[item.id] ?? contentBytes(item.id));
   }
 
   @override

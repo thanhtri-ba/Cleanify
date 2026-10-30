@@ -56,6 +56,8 @@ class ScanController extends Notifier<ScanState> {
     final scanner = MediaScanner(
       ref.read(mediaSourceProvider),
       config: ref.read(scanConfigProvider),
+      store: ref.read(hashStoreProvider),
+      matcher: ref.read(featureMatcherProvider),
     );
 
     ScanOutcome outcome;
@@ -131,5 +133,5 @@ class CleanupPlanNotifier extends Notifier<CleanupPlan?> {
   }
 }
 
-final cleanupPlanProvider =
-    NotifierProvider<CleanupPlanNotifier, CleanupPlan?>(CleanupPlanNotifier.new);
+final cleanupPlanProvider = NotifierProvider<CleanupPlanNotifier, CleanupPlan?>(
+    CleanupPlanNotifier.new);

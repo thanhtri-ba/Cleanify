@@ -44,7 +44,8 @@ class CleanupCompletePage extends ConsumerWidget {
                 label: AppStrings.reviewRemaining,
                 onPressed: () {
                   ref.read(cleanupControllerProvider.notifier).reset();
-                  final result = ref.read(scanControllerProvider).outcome?.result;
+                  final result =
+                      ref.read(scanControllerProvider).outcome?.result;
                   if (result != null) {
                     ref.read(cleanupPlanProvider.notifier).reset(result);
                   }
@@ -96,8 +97,7 @@ class CleanupCompletePage extends ConsumerWidget {
                 ),
                 Text(
                   '${AppStrings.itemsProcessed}: ${formatCount(deletedCount)}',
-                  style: AppText.custom(
-                      12, FontWeight.w400, AppColors.textBody,
+                  style: AppText.custom(12, FontWeight.w400, AppColors.textBody,
                       lineHeight: 16),
                 ),
               ],
@@ -110,7 +110,8 @@ class CleanupCompletePage extends ConsumerWidget {
                   CategoryRow(
                     category: c,
                     height: 52,
-                    trailing: RowValue(formatBytes(s.deletedByCategory[c] ?? 0)),
+                    trailing:
+                        RowValue(formatBytes(s.deletedByCategory[c] ?? 0)),
                   ),
             ],
           ),

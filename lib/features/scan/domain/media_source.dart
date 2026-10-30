@@ -1,3 +1,4 @@
+import 'feature_index.dart';
 import 'media_item.dart';
 
 /// Lỗi ở mức cả thư viện (mất quyền, thư viện tạm thời không truy cập được).
@@ -11,13 +12,9 @@ class MediaSourceException implements Exception {
   String toString() => 'MediaSourceException: $message';
 }
 
-/// Số ô của lưới độ sáng dùng tính dHash (9 cột x 8 hàng).
-const int lumaGridWidth = 9;
-const int lumaGridHeight = 8;
-const int lumaGridSize = lumaGridWidth * lumaGridHeight;
-
-/// Cạnh ảnh vuông (32x32) để tạo 8 hướng xoay/lật trước khi băm.
-const int lumaSquareSize = 32;
+/// Cạnh ảnh xám dùng để tính PDQ (64x64).
+const int lumaSide = 64;
+const int lumaGridSize = lumaSide * lumaSide;
 
 abstract interface class MediaSource {
   /// Tổng số ảnh + video truy cập được.
@@ -29,9 +26,14 @@ abstract interface class MediaSource {
   /// Dung lượng file (byte) hoặc null nếu không đọc được.
   Future<int?> sizeOf(MediaItem item);
 
-  /// Ảnh thu nhỏ vuông 32x32 (1024 giá trị độ sáng 0..255), hoặc null.
-  /// Vẫn chấp nhận lưới 9x8 (72 giá trị) để tương thích dữ liệu cũ.
+  /// Ảnh xám 64x64 (4096 giá trị 0..255, theo hàng) để tính PDQ, hoặc null.
   Future<List<int>?> lumaGrid(MediaItem item);
+
+  /// Đặc trưng ORB của ảnh (dùng thumbnail), hoặc null nếu không trích được.
+  Future<FeatureSet?> featureSet(MediaItem item);
+
+  /// Luồng byte của file gốc để tính SHA-256 (đọc theo khối), hoặc null.
+  Future<Stream<List<int>>?> openOriginal(MediaItem item);
 
   /// Giải phóng file tạm đã sinh ra khi đo (nếu có).
   Future<void> releaseCaches();

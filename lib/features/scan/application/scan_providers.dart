@@ -8,11 +8,21 @@ import '../data/library_size.dart';
 import '../data/simulated_device_storage.dart';
 import '../data/photo_manager_media_source.dart';
 import '../domain/device_storage.dart';
+import '../domain/feature_index.dart';
+import '../domain/hash_store.dart';
 import '../domain/media_source.dart';
 import '../domain/scan_models.dart';
 
 final mediaSourceProvider =
     Provider<MediaSource>((ref) => PhotoManagerMediaSource());
+
+/// Kho hash (SQLite) để quét tăng dần. Null nghĩa là không lưu; main() gắn kho
+/// thật khi khởi động.
+final hashStoreProvider = Provider<HashStore?>((ref) => null);
+
+/// Xác nhận ảnh cắt/che bằng ORB + RANSAC. Null nghĩa là chỉ dùng PDQ; main()
+/// gắn bản OpenCV khi khởi động.
+final featureMatcherProvider = Provider<FeatureMatcher?>((ref) => null);
 
 final mediaDeleterProvider =
     Provider<MediaDeleter>((ref) => const PhotoManagerMediaDeleter());
@@ -31,7 +41,7 @@ final deviceStorageSourceProvider = Provider<DeviceStorageSource>((ref) {
 
 /// Cấu hình quét. Màn Scan Preferences sẽ ghi đè provider này.
 final scanConfigProvider = Provider<ScanConfig>(
-  (ref) => const ScanConfig(globalMaxDistance: 3),
+  (ref) => const ScanConfig(),
 );
 
 final deviceStorageProvider = FutureProvider.autoDispose<DeviceStorage>(

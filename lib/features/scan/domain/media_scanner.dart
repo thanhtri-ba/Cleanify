@@ -1,9 +1,13 @@
 import 'dart:math' as math;
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+
+import 'feature_index.dart';
+import 'hash_store.dart';
 import 'media_item.dart';
 import 'media_source.dart';
-import 'near_duplicate_index.dart';
-import 'perceptual_hash.dart';
+import 'pdq.dart';
 import 'scan_models.dart';
 import 'union_find.dart';
 
@@ -11,16 +15,21 @@ class _CancelledSignal implements Exception {
   const _CancelledSignal();
 }
 
-class _Hashed {
-  const _Hashed(this.item, this.variants);
+/// Ảnh đã có hash: SHA-256 cho trùng chính xác, PDQ cho gần giống.
+class _PhotoHash {
+  const _PhotoHash(this.item, this.sha256, this.pdq, {this.features});
 
+  /// Đã gắn dung lượng file.
   final MediaItem item;
+  final String sha256;
 
-  /// Hash của ảnh theo 8 hướng (hoặc 1 hướng với dữ liệu 9x8 cũ). Phần tử đầu
-  /// là hướng gốc, dùng cho so trùng hoàn toàn.
-  final List<ImageHash> variants;
+  /// null khi không tính được PDQ (ảnh không đọc được pixel).
+  final Pdq? pdq;
 
-  ImageHash get hash => variants.first;
+  /// Đặc trưng ORB; null khi không có matcher hoặc ảnh quá ít chi tiết.
+  final FeatureSet? features;
+
+  String get id => item.id;
 }
 
 /// Quét thư viện theo các giai đoạn:
@@ -29,18 +38,30 @@ class _Hashed {
 /// Mỗi mục thuộc đúng một danh mục (video lớn, ảnh chụp màn hình, ảnh trùng,
 /// ảnh tương tự) nên không bị tính dung lượng hai lần.
 ///
-/// "Ảnh trùng" = cùng dHash, cùng kích thước ảnh và cùng dung lượng file.
-/// Đây là heuristic rất chặt nhưng KHÔNG phải so sánh từng byte.
-///
-/// "Ảnh tương tự" gom theo hai cách: (1) ảnh chụp gần nhau trong cửa sổ thời
-/// gian, khoảng cách Hamming <= `similarMaxDistance`; (2) nếu bật
-/// `globalMaxDistance`, mọi ảnh trong thư viện cùng tỉ lệ khung hình có khoảng
-/// cách rất nhỏ, tìm bằng chỉ mục nhiều đoạn thay vì so mọi cặp.
+/// - "Ảnh trùng": cùng SHA-256 của nội dung file. Đây là so sánh chính xác từng
+///   byte, không phải heuristic.
+/// - "Ảnh tương tự": PDQ 256 bit, khoảng cách Hamming <= `pdqMaxDistance`. Tìm
+///   ứng viên bằng chỉ mục 32 đoạn 8 bit: nếu hai ảnh có khoảng cách <= 31 thì
+///   ít nhất một đoạn trùng nhau, nên không bỏ sót ứng viên (trừ bucket bị chặn
+///   bởi `pdqMaxBucketSize`).
+/// - Với [store], hash của ảnh chưa đổi (cùng id, ngày sửa, kích thước) được
+///   lấy lại, không đọc file gốc lần nữa.
 class MediaScanner {
-  MediaScanner(this.source, {this.config = const ScanConfig()});
+  MediaScanner(
+    this.source, {
+    this.config = const ScanConfig(),
+    this.store,
+    this.matcher,
+  });
 
   final MediaSource source;
   final ScanConfig config;
+
+  /// Kho lưu hash; null nghĩa là không lưu, mỗi lần quét tính lại.
+  final HashStore? store;
+
+  /// Xác nhận ảnh cắt/che bằng ORB + RANSAC; null nghĩa là chỉ dùng PDQ.
+  final FeatureMatcher? matcher;
 
   Future<ScanOutcome> run({
     required CancelToken cancel,
@@ -84,16 +105,18 @@ class MediaScanner {
 
     ScanOutcome finish(ScanEnd end, [String? error]) {
       for (final c in ScanCategory.values) {
-        statuses[c] =
-            completed.contains(c) ? CategoryStatus.done : CategoryStatus.pending;
+        statuses[c] = completed.contains(c)
+            ? CategoryStatus.done
+            : CategoryStatus.pending;
       }
       emit();
       return ScanOutcome(
         end: end,
         error: error,
         result: ScanResult(
-          duplicateGroups:
-              completed.contains(ScanCategory.duplicates) ? duplicates : const [],
+          duplicateGroups: completed.contains(ScanCategory.duplicates)
+              ? duplicates
+              : const [],
           similarGroups:
               completed.contains(ScanCategory.similar) ? similar : const [],
           largeVideos:
@@ -156,98 +179,109 @@ class MediaScanner {
       await _release();
       emit();
 
-      // 4. Băm ảnh (không gồm ảnh chụp màn hình).
+      // 4. Băm ảnh (không gồm ảnh chụp màn hình). Hash đã lưu còn hợp lệ thì
+      // dùng lại; ảnh mới hoặc đã đổi thì băm lại và ghi xuống kho theo lô.
       final photos = all
           .where((i) => i.kind == MediaKind.image && !i.isScreenshot)
           .toList();
-      final hashed = <_Hashed>[];
-      await _mapBounded<MediaItem, bool>(
-        photos,
-        (item) async {
-          final luma = await source.lumaGrid(item);
-          if (luma == null) return true;
-          if (luma.length == lumaSquareSize * lumaSquareSize) {
-            hashed.add(_Hashed(item, orientationHashes(luma)));
-          } else if (luma.length == lumaGridSize) {
-            hashed.add(_Hashed(item, [dHash(luma)]));
-          }
-          return true;
-        },
-        cancel: cancel,
-        onChunk: (done) {
-          fraction = 0.35 + 0.45 * _ratio(done, photos.length);
-          emit();
-        },
-      );
-      hashed.sort(_byTimeThenId);
-
-      // 5. Ảnh trùng.
-      final byKey = <String, List<_Hashed>>{};
-      for (final h in hashed) {
-        final key = '${h.hash}_${h.item.width}x${h.item.height}';
-        byKey.putIfAbsent(key, () => []).add(h);
+      final cached = await _loadCache();
+      final hashes = <_PhotoHash>[];
+      final toSave = <StoredHash>[];
+      final failed = <MediaItem>[];
+      try {
+        await _mapBounded<MediaItem, bool>(
+          photos,
+          (item) async {
+            final hit = _cachedFor(item, cached);
+            // Hash đã lưu với PDQ chất lượng 0 thường do thumbnail chưa sẵn sàng
+            // khi quét trước đó (PDQ bị bỏ). Coi như chưa có để băm lại.
+            if (hit != null && hit.pdqQuality > 0) {
+              var ph = _fromStored(item, hit);
+              if (matcher != null && ph.features == null) {
+                // Đã có hash nhưng chưa có đặc trưng ORB: trích thêm rồi ghi lại.
+                ph = _PhotoHash(
+                  ph.item,
+                  ph.sha256,
+                  ph.pdq,
+                  features: await source.featureSet(item),
+                );
+                toSave.add(_toStored(item, ph));
+              }
+              hashes.add(ph);
+              return true;
+            }
+            final computed = await _hashPhotoSafely(item);
+            if (computed == null) {
+              failed.add(item);
+              return true;
+            }
+            hashes.add(computed);
+            toSave.add(_toStored(item, computed));
+            if (toSave.length >= config.hashFlushSize) {
+              final batch = List<StoredHash>.of(toSave);
+              toSave.clear();
+              await _saveRows(batch);
+            }
+            return true;
+          },
+          cancel: cancel,
+          onChunk: (done) {
+            fraction = 0.35 + 0.45 * _ratio(done, photos.length);
+            emit();
+          },
+        );
+      } finally {
+        // Lưu phần đã băm dù quét xong, bị hủy hay lỗi giữa chừng.
+        await _saveRows(toSave);
+        toSave.clear();
       }
-      final candidates = byKey.values.where((l) => l.length >= 2).toList();
+      // Thử lại ảnh lỗi một lần: ảnh iCloud hoặc file tạm thường đọc được ở lần sau.
+      final retried = await _mapBounded<MediaItem, _PhotoHash>(
+        failed,
+        _hashPhotoSafely,
+        cancel: cancel,
+      );
+      for (final ph in retried.whereType<_PhotoHash>()) {
+        hashes.add(ph);
+        toSave.add(_toStored(ph.item, ph));
+      }
+      await _saveRows(toSave);
+      toSave.clear();
+      await _pruneCache(all);
+      hashes.sort((a, b) => _oldestFirst(a.item, b.item));
+
+      // 5. Ảnh trùng: cùng SHA-256 nghĩa là cùng nội dung từng byte.
+      final bySha = <String, List<MediaItem>>{};
+      for (final h in hashes) {
+        bySha.putIfAbsent(h.sha256, () => []).add(h.item);
+      }
       final inDuplicates = <String>{};
-      for (var i = 0; i < candidates.length; i++) {
+      for (final same in bySha.values.where((l) => l.length >= 2)) {
         check();
-        final sized =
-            await _sizeAll(candidates[i].map((h) => h.item).toList(), cancel, null);
-        final bySize = <int, List<MediaItem>>{};
-        for (final item in sized) {
-          bySize.putIfAbsent(item.sizeBytes ?? -1, () => []).add(item);
-        }
-        for (final same in bySize.values.where((l) => l.length >= 2)) {
-          final ordered = [...same]..sort(_oldestFirst);
-          duplicates.add(MediaGroup(id: 'dup_${ordered.first.id}', items: ordered));
-          inDuplicates.addAll(ordered.map((e) => e.id));
-        }
-        fraction = 0.80 + 0.07 * _ratio(i + 1, candidates.length);
-        emit();
+        final ordered = [...same]..sort(_oldestFirst);
+        duplicates.add(MediaGroup(id: 'dup_${ordered.first.id}', items: ordered));
+        inDuplicates.addAll(ordered.map((e) => e.id));
       }
       duplicates.sort(_groupsBySavings);
       estimated += duplicates.fold(0, (s, g) => s + g.reclaimableBytes);
+      fraction = 0.80;
+      emit();
       await _release();
 
-      // 6. Ảnh tương tự: chọn "hạt giống" rồi gom các ảnh gần nó trong cửa sổ thời gian.
-      final pool = hashed.where((h) => !inDuplicates.contains(h.item.id)).toList();
-      final used = List<bool>.filled(pool.length, false);
-      var clusters = <List<MediaItem>>[];
-      for (var i = 0; i < pool.length; i++) {
-        if (i % 200 == 0) {
-          check();
-          await Future<void>.delayed(Duration.zero);
-        }
-        if (used[i]) continue;
-        final members = <MediaItem>[pool[i].item];
-        for (var j = i + 1; j < pool.length; j++) {
-          final gap = pool[j].item.createdAt.difference(pool[i].item.createdAt);
-          if (gap > config.similarWindow) break;
-          if (used[j]) continue;
-          if (orientationDistance(pool[i].variants, pool[j].hash) <=
-              config.similarMaxDistance) {
-            members.add(pool[j].item);
-            used[j] = true;
-          }
-        }
-        if (members.length >= 2) {
-          used[i] = true;
-          clusters.add(members);
-        }
-      }
-      if (config.globalMaxDistance > 0) {
-        clusters = await _mergeAcrossTime(pool, clusters, check);
-      }
-      fraction = 0.90;
-      emit();
-
+      // 6. Ảnh tương tự: PDQ gần nhau, và ORB khớp theo hình học (bắt ảnh cắt
+      // và che). Ảnh đã nằm trong nhóm trùng thì bỏ qua.
+      final pool = [
+        for (final h in hashes)
+          if (!inDuplicates.contains(h.id)) h,
+      ];
+      final clusters = await _similarClusters(pool, check);
       for (var i = 0; i < clusters.length; i++) {
         check();
         final sized = await _sizeAll(clusters[i], cancel, null);
         if (sized.length < 2) continue;
         final ordered = [...sized]..sort(_bestFirst);
         similar.add(MediaGroup(id: 'sim_${ordered.first.id}', items: ordered));
-        fraction = 0.90 + 0.10 * _ratio(i + 1, clusters.length);
+        fraction = 0.80 + 0.10 * _ratio(i + 1, clusters.length);
         emit();
       }
       similar.sort(_groupsBySavings);
@@ -260,75 +294,231 @@ class MediaScanner {
     } on _CancelledSignal {
       return finish(ScanEnd.cancelled);
     } on MediaSourceException catch (e) {
-      return finish(ScanEnd.interrupted, e.message);
+      return finish(ScanEnd.interrupted, e.toString());
     } catch (e) {
       return finish(ScanEnd.interrupted, e.toString());
     }
   }
 
-  /// Gộp thêm các ảnh rất giống nhau nhưng chụp/lưu cách xa nhau về thời gian.
-  /// Giữ nguyên các cụm theo cửa sổ thời gian và nối chúng với ảnh ngoài cửa
-  /// sổ khi khoảng cách Hamming <= `globalMaxDistance`, cùng tỉ lệ khung hình.
-  Future<List<List<MediaItem>>> _mergeAcrossTime(
-    List<_Hashed> pool,
-    List<List<MediaItem>> clusters,
+  /// Lỗi của riêng một file (hỏng, không giải mã được) chỉ bỏ qua file đó.
+  /// Lỗi của cả thư viện vẫn dừng lượt quét.
+  Future<_PhotoHash?> _hashPhotoSafely(MediaItem item) async {
+    try {
+      return await _hashPhoto(item);
+    } on MediaSourceException {
+      rethrow;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Băm một ảnh: SHA-256 đọc theo khối, PDQ từ ảnh xám 64x64, và đặc trưng ORB
+  /// khi có matcher.
+  Future<_PhotoHash?> _hashPhoto(MediaItem item) async {
+    final stream = await source.openOriginal(item);
+    if (stream == null) return null;
+    var size = 0;
+    final counted = stream.map((chunk) {
+      size += chunk.length;
+      return chunk;
+    });
+    final digest = await sha256.bind(counted).first;
+
+    final luma = await source.lumaGrid(item);
+    final pdq = luma == null || luma.length != lumaGridSize
+        ? null
+        : pdqFromLuma(luma);
+    final features = matcher == null ? null : await source.featureSet(item);
+    return _PhotoHash(
+      item.withSize(size),
+      digest.toString(),
+      pdq,
+      features: features,
+    );
+  }
+
+  static StoredHash _toStored(MediaItem item, _PhotoHash ph) {
+    final pdq = ph.pdq;
+    return StoredHash(
+      id: item.id,
+      width: item.width,
+      height: item.height,
+      modifiedAtMs: item.modifiedAt?.millisecondsSinceEpoch ?? 0,
+      fileSize: ph.item.sizeBytes ?? 0,
+      sha256: ph.sha256,
+      pdq: pdq?.bytes ?? Uint8List(pdqBytes),
+      pdqQuality: pdq?.quality ?? 0,
+      features: ph.features?.pack(),
+    );
+  }
+
+  Future<Map<String, StoredHash>> _loadCache() async {
+    final s = store;
+    if (s == null) return const {};
+    try {
+      return await s.loadAll();
+    } catch (_) {
+      // Kho lỗi thì quét không dùng cache; kết quả vẫn đúng.
+      return const {};
+    }
+  }
+
+  Future<void> _saveRows(List<StoredHash> rows) async {
+    final s = store;
+    if (s == null || rows.isEmpty) return;
+    try {
+      await s.saveAll(rows);
+    } catch (_) {
+      // Không ghi được thì lần sau tính lại, không làm hỏng lượt quét.
+    }
+  }
+
+  Future<void> _pruneCache(List<MediaItem> all) async {
+    final s = store;
+    if (s == null) return;
+    try {
+      await s.retainOnly({for (final i in all) i.id});
+    } catch (_) {}
+  }
+
+  /// Hash đã lưu còn dùng được khi ảnh chưa đổi: cùng ngày sửa và kích thước.
+  static StoredHash? _cachedFor(
+    MediaItem item,
+    Map<String, StoredHash> cached,
+  ) {
+    final hit = cached[item.id];
+    final modified = item.modifiedAt?.millisecondsSinceEpoch;
+    if (hit == null || modified == null) return null;
+    if (hit.modifiedAtMs != modified ||
+        hit.width != item.width ||
+        hit.height != item.height) {
+      return null;
+    }
+    return hit;
+  }
+
+  static _PhotoHash _fromStored(MediaItem item, StoredHash hit) {
+    final bytes = hit.features;
+    return _PhotoHash(
+      item.withSize(hit.fileSize),
+      hit.sha256,
+      Pdq(hit.pdq, hit.pdqQuality),
+      features: bytes == null ? null : FeatureSet.unpack(bytes),
+    );
+  }
+
+  /// Gom ảnh tương tự: cạnh PDQ gần nhau (chỉ mục 32 đoạn 8 bit) và cạnh ORB
+  /// khớp hình học (chỉ mục LSH chọn ứng viên, RANSAC xác nhận). Hợp các cạnh
+  /// bằng union-find; mỗi thành phần liên thông là một nhóm.
+  Future<List<List<MediaItem>>> _similarClusters(
+    List<_PhotoHash> pool,
     void Function() check,
   ) async {
-    final indexById = <String, int>{
-      for (var i = 0; i < pool.length; i++) pool[i].item.id: i,
-    };
     final sets = UnionFind(pool.length);
-    for (final cluster in clusters) {
-      final first = indexById[cluster.first.id]!;
-      for (final member in cluster.skip(1)) {
-        sets.union(first, indexById[member.id]!);
-      }
+    await _unionPdq(pool, sets, check);
+    final m = matcher;
+    if (m != null) {
+      await _unionOrb(pool, sets, m, check);
     }
-
-    final minBits = config.globalMinSetBits;
-    final eligible = <int>[
-      for (var i = 0; i < pool.length; i++)
-        if (pool[i].hash.bitCount >= minBits &&
-            pool[i].hash.bitCount <= 64 - minBits)
-          i,
-    ];
-    final pairs = await findNearDuplicatePairs(
-      [for (final i in eligible) pool[i].hash],
-      maxDistance: config.globalMaxDistance,
-      maxBucketSize: config.globalMaxBucketSize,
-      check: check,
-    );
-    for (final (a, b) in pairs) {
-      final left = eligible[a];
-      final right = eligible[b];
-      if (_sameShape(pool[left].item, pool[right].item)) {
-        sets.union(left, right);
-      }
-    }
-
-    // Gom theo gốc, giữ thứ tự của pool để kết quả ổn định.
     final byRoot = <int, List<MediaItem>>{};
     for (var i = 0; i < pool.length; i++) {
       byRoot.putIfAbsent(sets.find(i), () => []).add(pool[i].item);
     }
-    return byRoot.values.where((members) => members.length >= 2).toList();
+    return [
+      for (final members in byRoot.values)
+        if (members.length >= 2) members,
+    ];
   }
 
-  /// Cùng tỉ lệ khung hình (sai lệch <= 2%). Ảnh chưa biết kích thước thì
-  /// không được gom theo cách này.
-  static bool _sameShape(MediaItem a, MediaItem b) {
-    if (a.width <= 0 || a.height <= 0 || b.width <= 0 || b.height <= 0) {
-      return false;
+  Future<void> _unionPdq(
+    List<_PhotoHash> pool,
+    UnionFind sets,
+    void Function() check,
+  ) async {
+    final eligible = [
+      for (var i = 0; i < pool.length; i++)
+        if (pool[i].pdq != null && pool[i].pdq!.quality >= config.pdqMinQuality)
+          i,
+    ];
+    final buckets = <int, List<int>>{};
+    for (var e = 0; e < eligible.length; e++) {
+      final bytes = pool[eligible[e]].pdq!.bytes;
+      for (var b = 0; b < pdqBytes; b++) {
+        buckets.putIfAbsent(b * 256 + bytes[b], () => []).add(eligible[e]);
+      }
+      if (e % 500 == 0) {
+        check();
+        await Future<void>.delayed(Duration.zero);
+      }
     }
-    final left = a.width * b.height;
-    final right = b.width * a.height;
-    return (left - right).abs() <= 0.02 * math.max(left, right);
+
+    final seen = <int>{};
+    var processed = 0;
+    for (final members in buckets.values) {
+      if (members.length < 2 || members.length > config.pdqMaxBucketSize) {
+        continue;
+      }
+      for (var x = 0; x < members.length; x++) {
+        for (var y = x + 1; y < members.length; y++) {
+          final i = members[x];
+          final j = members[y];
+          if (!seen.add(i * pool.length + j)) continue;
+          if (pool[i].pdq!.distanceTo(pool[j].pdq!) <= config.pdqMaxDistance) {
+            sets.union(i, j);
+          }
+        }
+      }
+      if (++processed % 200 == 0) {
+        check();
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
   }
 
-  Future<void> _release() async {
-    try {
-      await source.releaseCaches();
-    } catch (_) {}
+  Future<void> _unionOrb(
+    List<_PhotoHash> pool,
+    UnionFind sets,
+    FeatureMatcher matcher,
+    void Function() check,
+  ) async {
+    final eligible = [
+      for (var i = 0; i < pool.length; i++)
+        if (pool[i].features != null) i,
+    ];
+    if (eligible.length < 2) return;
+    final features = [for (final i in eligible) pool[i].features!];
+    final index = LshIndex.build(features);
+    // Ứng viên top-K của từng ảnh. Chỉ nối cạnh ORB khi hai ảnh đều nằm trong
+    // top-K của nhau: giảm cạnh lạc khiến cụm lan sang ảnh khác cảnh.
+    final candidates = List<Set<int>>.generate(eligible.length, (_) => <int>{});
+    for (var e = 0; e < eligible.length; e++) {
+      candidates[e].addAll(
+        index.nearest(features[e], self: e, k: config.orbTopK),
+      );
+      if (e % 200 == 0) {
+        check();
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
+    final tried = <int>{};
+    for (var e = 0; e < eligible.length; e++) {
+      final i = eligible[e];
+      for (final int c in candidates[e]) {
+        if (!candidates[c].contains(e)) continue;
+        final j = eligible[c];
+        if (sets.find(i) == sets.find(j)) continue;
+        final key = math.min(e, c) * eligible.length + math.max(e, c) as int;
+        if (!tried.add(key)) continue;
+        if (matcher.inliers(features[e], features[c]) >=
+            config.orbMinInliers) {
+          sets.union(i, j);
+        }
+      }
+      if (e % 200 == 0) {
+        check();
+        await Future<void>.delayed(Duration.zero);
+      }
+    }
   }
 
   /// Đo dung lượng, bỏ các mục không đọc được.
@@ -348,6 +538,12 @@ class MediaScanner {
       onChunk: onChunk,
     );
     return sized.whereType<MediaItem>().toList();
+  }
+
+  Future<void> _release() async {
+    try {
+      await source.releaseCaches();
+    } catch (_) {}
   }
 
   Future<List<R?>> _mapBounded<T, R>(
@@ -386,9 +582,6 @@ class MediaScanner {
     final c = b.pixels.compareTo(a.pixels);
     return c != 0 ? c : _oldestFirst(a, b);
   }
-
-  static int _byTimeThenId(_Hashed a, _Hashed b) =>
-      _oldestFirst(a.item, b.item);
 
   static int _groupsBySavings(MediaGroup a, MediaGroup b) {
     final c = b.reclaimableBytes.compareTo(a.reclaimableBytes);

@@ -43,26 +43,42 @@ class HeroArtSpec {
 
   static const art1 = HeroArtSpec(designSize: 310, layers: [
     HeroLayer('$_p/h1_base.png'),
-    HeroLayer('$_p/h1_l00.png', motion: HeroMotion.float, period: 6.5, phase: 2.0),
-    HeroLayer('$_p/h1_l01.png', motion: HeroMotion.float, period: 5.5, phase: 1.5),
-    HeroLayer('$_p/h1_l02.png', motion: HeroMotion.float, period: 6.5, phase: 3.0),
-    HeroLayer('$_p/h1_l03.png', motion: HeroMotion.float, period: 5.5, phase: 0.8),
-    HeroLayer('$_p/h1_l04.png', motion: HeroMotion.float, period: 6.5, phase: 2.4),
-    HeroLayer('$_p/h1_l05.png', motion: HeroMotion.float, period: 5.5, phase: 1.0),
-    HeroLayer('$_p/h1_l06.png', motion: HeroMotion.sparkle, period: 3, phase: 0),
-    HeroLayer('$_p/h1_l07.png', motion: HeroMotion.sparkle, period: 3, phase: 1.0),
-    HeroLayer('$_p/h1_l08.png', motion: HeroMotion.sparkle, period: 3, phase: 2.0),
-    HeroLayer('$_p/h1_l09.png', motion: HeroMotion.sparkle, period: 3, phase: 0.5),
-    HeroLayer('$_p/h1_l10.png', motion: HeroMotion.sparkle, period: 3, phase: 1.5),
+    HeroLayer('$_p/h1_l00.png',
+        motion: HeroMotion.float, period: 6.5, phase: 2.0),
+    HeroLayer('$_p/h1_l01.png',
+        motion: HeroMotion.float, period: 5.5, phase: 1.5),
+    HeroLayer('$_p/h1_l02.png',
+        motion: HeroMotion.float, period: 6.5, phase: 3.0),
+    HeroLayer('$_p/h1_l03.png',
+        motion: HeroMotion.float, period: 5.5, phase: 0.8),
+    HeroLayer('$_p/h1_l04.png',
+        motion: HeroMotion.float, period: 6.5, phase: 2.4),
+    HeroLayer('$_p/h1_l05.png',
+        motion: HeroMotion.float, period: 5.5, phase: 1.0),
+    HeroLayer('$_p/h1_l06.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 0),
+    HeroLayer('$_p/h1_l07.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 1.0),
+    HeroLayer('$_p/h1_l08.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 2.0),
+    HeroLayer('$_p/h1_l09.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 0.5),
+    HeroLayer('$_p/h1_l10.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 1.5),
   ]);
 
   static const art2 = HeroArtSpec(designSize: 269, layers: [
     HeroLayer('$_p/h2_base.png'),
-    HeroLayer('$_p/h2_l00.png', motion: HeroMotion.float, period: 6.5, phase: 2.0),
-    HeroLayer('$_p/h2_l01.png', motion: HeroMotion.sparkle, period: 3, phase: 0),
-    HeroLayer('$_p/h2_l02.png', motion: HeroMotion.sparkle, period: 3, phase: 1.0),
-    HeroLayer('$_p/h2_l03.png', motion: HeroMotion.sparkle, period: 3, phase: 2.0),
-    HeroLayer('$_p/h2_l04.png', motion: HeroMotion.sparkle, period: 3, phase: 0.6),
+    HeroLayer('$_p/h2_l00.png',
+        motion: HeroMotion.float, period: 6.5, phase: 2.0),
+    HeroLayer('$_p/h2_l01.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 0),
+    HeroLayer('$_p/h2_l02.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 1.0),
+    HeroLayer('$_p/h2_l03.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 2.0),
+    HeroLayer('$_p/h2_l04.png',
+        motion: HeroMotion.sparkle, period: 3, phase: 0.6),
   ]);
 
   static const art3 = HeroArtSpec(
@@ -71,13 +87,20 @@ class HeroArtSpec {
     layers: [
       HeroLayer('$_p/h3_base.png'),
       HeroLayer('$_p/h3_l00.png', motion: HeroMotion.spin, period: 24),
-      HeroLayer('$_p/h3_l01.png', motion: HeroMotion.sparkle, period: 3, phase: 0.25),
-      HeroLayer('$_p/h3_l02.png', motion: HeroMotion.sparkle, period: 3, phase: 1.25),
-      HeroLayer('$_p/h3_l03.png', motion: HeroMotion.sparkle, period: 3, phase: 2.25),
-      HeroLayer('$_p/h3_l04.png', motion: HeroMotion.sparkle, period: 3, phase: 0),
-      HeroLayer('$_p/h3_l05.png', motion: HeroMotion.sparkle, period: 3, phase: 1.0),
-      HeroLayer('$_p/h3_l06.png', motion: HeroMotion.sparkle, period: 3, phase: 2.0),
-      HeroLayer('$_p/h3_l07.png', motion: HeroMotion.sparkle, period: 3, phase: 0.5),
+      HeroLayer('$_p/h3_l01.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 0.25),
+      HeroLayer('$_p/h3_l02.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 1.25),
+      HeroLayer('$_p/h3_l03.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 2.25),
+      HeroLayer('$_p/h3_l04.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 0),
+      HeroLayer('$_p/h3_l05.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 1.0),
+      HeroLayer('$_p/h3_l06.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 2.0),
+      HeroLayer('$_p/h3_l07.png',
+          motion: HeroMotion.sparkle, period: 3, phase: 0.5),
     ],
   );
 }
@@ -139,8 +162,7 @@ class _HeroArtState extends State<HeroArt> with SingleTickerProviderStateMixin {
     final k = widget.size / widget.spec.designSize;
     final spec = widget.spec;
     final layers = <Widget>[
-      for (final l in spec.layers)
-        _buildLayer(l, k),
+      for (final l in spec.layers) _buildLayer(l, k),
     ];
     return SizedBox(
       width: widget.size,

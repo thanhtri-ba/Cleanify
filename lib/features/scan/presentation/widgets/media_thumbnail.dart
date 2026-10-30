@@ -27,8 +27,9 @@ class MediaThumbnail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bytes =
-        ref.watch(thumbnailProvider(ThumbnailRequest(id, requestSize))).valueOrNull;
+    final bytes = ref
+        .watch(thumbnailProvider(ThumbnailRequest(id, requestSize)))
+        .valueOrNull;
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
       child: SizedBox(

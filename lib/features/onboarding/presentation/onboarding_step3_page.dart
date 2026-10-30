@@ -73,9 +73,9 @@ class OnboardingStep3Page extends ConsumerWidget {
                 offset: Offset(0, 4),
               ),
             ],
-            onPressed: () {
-              ref.read(onboardingSeenProvider.notifier).complete();
-              context.push(AppRoutes.fileAccess);
+            onPressed: () async {
+              await ref.read(onboardingSeenProvider.notifier).complete();
+              if (context.mounted) context.go(AppRoutes.fileAccess);
             },
           ),
         ),

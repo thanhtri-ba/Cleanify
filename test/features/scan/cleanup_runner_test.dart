@@ -66,8 +66,8 @@ void main() {
       if (call == 1) cancel.cancel();
     });
 
-    final outcome = await CleanupRunner(deleter, chunkSize: 2)
-        .run(ids(6), cancel: cancel);
+    final outcome =
+        await CleanupRunner(deleter, chunkSize: 2).run(ids(6), cancel: cancel);
 
     expect(deleter.calls, hasLength(1));
     expect(outcome.cancelled, isTrue);
@@ -87,7 +87,8 @@ void main() {
   });
 
   test('deleter trả về id ngoài lượt thì bị bỏ qua', () async {
-    final outcome = await CleanupRunner(_Wild()).run(['a'], cancel: CancelToken());
+    final outcome =
+        await CleanupRunner(_Wild()).run(['a'], cancel: CancelToken());
     expect(outcome.deletedIds, ['a']);
   });
 

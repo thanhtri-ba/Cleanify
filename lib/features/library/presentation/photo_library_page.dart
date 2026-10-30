@@ -69,8 +69,30 @@ class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
 
   void _openViewer(int index) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => PhotoViewerPage(initialIndex: index),
+      PageRouteBuilder<void>(
+        transitionDuration: const Duration(milliseconds: 280),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (_, __, ___) => PhotoViewerPage(initialIndex: index),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
+            return child;
+          }
+          final curve = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+            reverseCurve: Curves.easeInCubic,
+          );
+          return FadeTransition(
+            opacity: CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOut,
+            ),
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 1.06, end: 1).animate(curve),
+              child: child,
+            ),
+          );
+        },
       ),
     );
   }

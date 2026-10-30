@@ -168,8 +168,8 @@ class _FullImageState extends ConsumerState<_FullImage> {
   @override
   Widget build(BuildContext context) {
     // Cạnh dài 1600px đủ nét trên màn hình điện thoại mà không đọc file gốc.
-    final bytes = ref
-        .watch(thumbnailProvider(ThumbnailRequest(widget.item.id, 1600)));
+    final bytes =
+        ref.watch(thumbnailProvider(ThumbnailRequest(widget.item.id, 1600)));
     return bytes.when(
       data: (data) => data == null
           ? const _Failed()

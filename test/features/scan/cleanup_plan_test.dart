@@ -116,7 +116,8 @@ void main() {
     test('bỏ mục đã xóa, giữ nhóm còn từ 2 mục, bỏ nhóm còn 1', () {
       final next = sample().without({'d1b', 's1b', 'v1'});
 
-      expect(next.duplicateGroups.single.items.map((e) => e.id), ['d1a', 'd1c']);
+      expect(
+          next.duplicateGroups.single.items.map((e) => e.id), ['d1a', 'd1c']);
       expect(next.similarGroups, isEmpty);
       expect(next.largeVideos, isEmpty);
       expect(next.screenshots, hasLength(1));
@@ -147,13 +148,16 @@ void main() {
     expect(plan.isSelected('s1a'), isFalse);
   });
 
-  test('screenshot trùng nhau: vẫn giữ lại một bản dù danh mục Screenshots chọn hết',
+  test(
+      'screenshot trùng nhau: vẫn giữ lại một bản dù danh mục Screenshots chọn hết',
       () {
     final a = sized(photo('sc_a', screenshot: true), 1 * mb);
     final b = sized(photo('sc_b', screenshot: true), 1 * mb);
     final c = sized(photo('sc_c', screenshot: true), 1 * mb);
     final result = ScanResult(
-      duplicateGroups: [MediaGroup(id: 'd', items: [a, b])],
+      duplicateGroups: [
+        MediaGroup(id: 'd', items: [a, b])
+      ],
       screenshots: [a, b, c],
       completed: ScanCategory.values.toSet(),
     );

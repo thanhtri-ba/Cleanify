@@ -15,12 +15,16 @@ dependencies:
   shared_preferences: ^2.2.3
   photo_manager: ^3.6.0
   disk_space_plus: ^0.2.4
-
+  crypto: ^3.0.8
+  sqflite: ^2.4.5
+  opencv_dart: ^2.2.2
+  workmanager: ^0.10.10
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
   fake_async: ^1.3.1
+  sqflite_common_ffi: ^2.4.5
 
 flutter:
   uses-material-design: true
@@ -40,3 +44,20 @@ flutter:
           weight: 600
         - asset: assets/fonts/Inter.ttf
           weight: 700
+
+# Bản cục bộ của dartcv4: deployment target của iOS/macOS được nâng lên mức Xcode hiện tại.
+dependency_overrides:
+  dartcv4:
+    path: third_party/dartcv4
+
+# Danh sách này THAY THẾ mặc định, nên phải kê cả imgproc và imgcodecs.
+# features2d (ORB, BFMatcher), calib3d (RANSAC), flann là module cần cho bước khớp đặc trưng.
+hooks:
+  user_defines:
+    dartcv4:
+      include_modules:
+        - imgproc
+        - imgcodecs
+        - calib3d
+        - features2d
+        - flann

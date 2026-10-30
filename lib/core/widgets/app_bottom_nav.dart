@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/app_strings.dart';
 import '../theme/app_assets.dart';
@@ -11,6 +12,7 @@ import 'app_svg.dart';
 enum AppTab { home, scan, storage, settings }
 
 /// Thanh điều hướng dưới (Home · Clean · Storage · Settings) theo Figma.
+/// Nền pill trượt sang tab đang chọn, icon nhích nhẹ khi kích hoạt.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({super.key, required this.current, required this.onTap});
 
@@ -27,10 +29,13 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = math.max(14.0, MediaQuery.viewPaddingOf(context).bottom);
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final activeIndex =
+        math.max(0, _items.indexWhere((item) => item.$1 == current));
+
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 4, 16, bottom),
       child: Container(
-        padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(26),
@@ -44,18 +49,47 @@ class AppBottomNav extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            for (final (tab, icon, label) in _items)
-              Expanded(
-                child: _NavItem(
-                  icon: icon,
-                  label: label,
-                  active: tab == current,
-                  onTap: () => onTap(tab),
-                ),
-              ),
-          ],
+        padding: const EdgeInsets.all(8),
+        child: SizedBox(
+          height: 52,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final itemWidth = box.maxWidth / _items.length;
+              return Stack(
+                children: [
+                  AnimatedPositioned(
+                    duration: reduce
+                        ? Duration.zero
+                        : const Duration(milliseconds: 340),
+                    curve: Curves.easeOutCubic,
+                    left: activeIndex * itemWidth + 2,
+                    top: 0,
+                    width: itemWidth - 4,
+                    height: 52,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.chip,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      for (final (tab, icon, label) in _items)
+                        Expanded(
+                          child: _NavItem(
+                            icon: icon,
+                            label: label,
+                            active: tab == current,
+                            onTap: () => onTap(tab),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -77,6 +111,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final color = active ? AppColors.primary : AppColors.textBlue;
     return Semantics(
       button: true,
@@ -85,28 +120,29 @@ class _NavItem extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Container(
-          decoration: BoxDecoration(
-            color: active ? AppColors.chip : Colors.transparent,
-            borderRadius: BorderRadius.circular(18),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SizedBox(
+        onTap: () {
+          if (!active) HapticFeedback.selectionClick();
+          onTap();
+        },
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedScale(
+              scale: active && !reduce ? 1.08 : 1,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutBack,
+              child: SizedBox(
                 height: 18.33,
                 child: AppSvg(icon, size: 18.33, color: color),
               ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: AppText.custom(11, FontWeight.w600, color,
-                    lineHeight: 14),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 4),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              style: AppText.custom(11, FontWeight.w600, color, lineHeight: 14),
+              child: Text(label),
+            ),
+          ],
         ),
       ),
     );

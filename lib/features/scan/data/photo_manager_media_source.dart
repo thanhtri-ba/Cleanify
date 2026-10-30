@@ -3,15 +3,17 @@ import 'dart:ui' as ui;
 
 import 'package:photo_manager/photo_manager.dart';
 
+import '../domain/feature_index.dart';
 import '../domain/media_item.dart';
 import '../domain/media_source.dart';
+import 'opencv_features.dart';
 
 /// Nguồn media thật dựa trên `photo_manager`.
 ///
 /// Lưu ý đã biết (cần kiểm tra trên máy thật):
-/// - [sizeOf] dùng `originFile`. Trên iOS đây có thể xuất file ra thư mục tạm
-///   (và có thể kích hoạt tải iCloud), nên [releaseCaches] được gọi sau mỗi
-///   giai đoạn để dọn.
+/// - [openOriginal] và [sizeOf] dùng `originFile`. Trên iOS đây có thể xuất file
+///   ra thư mục tạm (và có thể kích hoạt tải iCloud), nên [releaseCaches] được
+///   gọi sau mỗi giai đoạn để dọn.
 /// - Ảnh chụp màn hình: iOS dùng bit subtype (1 << 2), Android dùng đường dẫn
 ///   thư mục chứa "screenshot".
 class PhotoManagerMediaSource implements MediaSource {
@@ -68,6 +70,7 @@ class PhotoManagerMediaSource implements MediaSource {
             width: entity.width,
             height: entity.height,
             createdAt: entity.createDateTime,
+            modifiedAt: entity.modifiedDateTime,
             isScreenshot: _isScreenshot(entity),
           ),
         );
@@ -98,13 +101,29 @@ class PhotoManagerMediaSource implements MediaSource {
   }
 
   @override
+  Future<Stream<List<int>>?> openOriginal(MediaItem item) async {
+    final entity = _entities[item.id];
+    if (entity == null) return null;
+    try {
+      final file = await entity.originFile;
+      if (file != null) return file.openRead();
+      // Ảnh chỉ có trên iCloud: originFile trả null khi chưa tải về, còn
+      // originBytes buộc tải rồi trả dữ liệu gốc.
+      final bytes = await entity.originBytes;
+      return bytes == null ? null : Stream<List<int>>.value(bytes);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Future<List<int>?> lumaGrid(MediaItem item) async {
     final entity = _entities[item.id];
     if (entity == null) return null;
     try {
       final bytes = await entity.thumbnailDataWithSize(
-        const ThumbnailSize(32, 32),
-        quality: 70,
+        const ThumbnailSize(lumaSide, lumaSide),
+        quality: 90,
       );
       if (bytes == null) return null;
       return await _decodeLuma(bytes);
@@ -113,11 +132,27 @@ class PhotoManagerMediaSource implements MediaSource {
     }
   }
 
+  @override
+  Future<FeatureSet?> featureSet(MediaItem item) async {
+    final entity = _entities[item.id];
+    if (entity == null) return null;
+    try {
+      final thumb = await entity.thumbnailDataWithSize(
+        const ThumbnailSize(512, 512),
+        quality: 90,
+      );
+      if (thumb == null) return null;
+      return OpenCvFeatures.extract(thumb);
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<List<int>?> _decodeLuma(Uint8List bytes) async {
     final codec = await ui.instantiateImageCodec(
       bytes,
-      targetWidth: lumaSquareSize,
-      targetHeight: lumaSquareSize,
+      targetWidth: lumaSide,
+      targetHeight: lumaSide,
     );
     try {
       final frame = await codec.getNextFrame();
@@ -125,9 +160,8 @@ class PhotoManagerMediaSource implements MediaSource {
       try {
         final data = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
         if (data == null) return null;
-        const pixels = lumaSquareSize * lumaSquareSize;
         final luma = <int>[];
-        for (var i = 0; i < pixels; i++) {
+        for (var i = 0; i < lumaGridSize; i++) {
           final r = data.getUint8(i * 4);
           final g = data.getUint8(i * 4 + 1);
           final b = data.getUint8(i * 4 + 2);

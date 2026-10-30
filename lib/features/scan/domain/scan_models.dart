@@ -83,8 +83,7 @@ class ScanResult {
     }
   }
 
-  int get totalBytes =>
-      ScanCategory.values.fold(0, (sum, c) => sum + bytes(c));
+  int get totalBytes => ScanCategory.values.fold(0, (sum, c) => sum + bytes(c));
 
   bool get isEmpty => ScanCategory.values.every((c) => count(c) == 0);
 
@@ -164,38 +163,40 @@ class ScanOutcome {
 class ScanConfig {
   const ScanConfig({
     this.largeVideoBytes = 150 * 1000 * 1000,
-    this.similarMaxDistance = 6,
-    this.similarWindow = const Duration(minutes: 10),
     this.pageSize = 500,
     this.concurrency = 6,
-    this.globalMaxDistance = 0,
-    this.globalMinSetBits = 8,
-    this.globalMaxBucketSize = 300,
+    this.pdqMaxDistance = 31,
+    this.pdqMinQuality = 10,
+    this.pdqMaxBucketSize = 1000,
+    this.hashFlushSize = 200,
+    this.orbTopK = 10,
+    this.orbMinInliers = 20,
   });
 
   /// Video từ ngưỡng này trở lên được coi là lớn.
   final int largeVideoBytes;
-
-  /// Khoảng cách Hamming tối đa (trên 64 bit) để coi hai ảnh là tương tự.
-  final int similarMaxDistance;
-
-  /// Chỉ so sánh các ảnh chụp cách nhau tối đa khoảng này.
-  final Duration similarWindow;
   final int pageSize;
   final int concurrency;
 
-  /// Khoảng cách Hamming tối đa để gom ảnh tương tự BẤT KỂ thời điểm chụp
-  /// (bắt ảnh đã nén, lưu lại hoặc tải về sau). 0 = tắt, chỉ dùng cửa sổ thời
-  /// gian. Giá trị được giới hạn trong 0..3 và nên chặt hơn
-  /// [similarMaxDistance] vì không có ràng buộc thời gian.
-  final int globalMaxDistance;
+  /// Khoảng cách Hamming tối đa (trên 256 bit) của PDQ để coi là tương tự.
+  /// Chưa hiệu chỉnh trên ảnh có nhãn; giá trị 31 lấy từ tài liệu PDQ.
+  final int pdqMaxDistance;
 
-  /// Bỏ qua ảnh có ít hơn số bit 1 này (hoặc ít hơn số bit 0 này) khỏi bước so
-  /// toàn thư viện: ảnh gần như phẳng cho hash giống nhau dù nội dung khác.
-  final int globalMinSetBits;
+  /// Ảnh có chất lượng PDQ thấp hơn mức này (gần như phẳng) không tham gia so
+  /// sánh gần giống.
+  final int pdqMinQuality;
 
-  /// Xô hash lớn hơn mức này bị bỏ qua để giữ chi phí so sánh có chặn trên.
-  final int globalMaxBucketSize;
+  /// Bucket lớn hơn mức này bị bỏ qua để giữ chi phí có chặn trên.
+  final int pdqMaxBucketSize;
+
+  /// Số ảnh mới băm xong thì ghi xuống kho một lần.
+  final int hashFlushSize;
+
+  /// Số ảnh ứng viên mỗi ảnh được RANSAC kiểm tra (ORB).
+  final int orbTopK;
+
+  /// Số điểm khớp tối thiểu sau RANSAC để coi là cùng một ảnh gốc.
+  final int orbMinInliers;
 }
 
 class CancelToken {

@@ -7,6 +7,7 @@ import '../../scan/application/cleanup_controller.dart';
 import '../../scan/application/scan_controller.dart';
 import '../../scan/application/scan_providers.dart';
 import '../../scan/domain/scan_models.dart';
+import '../../settings/application/app_settings.dart';
 
 enum NotificationGroup { today, reminders }
 
@@ -59,6 +60,7 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
   final storage = ref.watch(deviceStorageProvider).valueOrNull;
   final last = ref.watch(lastCleanupProvider);
   final threshold = ref.watch(scanConfigProvider).largeVideoBytes;
+  final remindersOn = ref.watch(appSettingsProvider).notificationsEnabled;
   final result = scan.outcome?.result;
 
   final out = <AppNotification>[];
@@ -104,7 +106,9 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
     }
   }
 
-  if (storage != null && storage.usedFraction >= kStorageWarnFraction) {
+  if (remindersOn &&
+      storage != null &&
+      storage.usedFraction >= kStorageWarnFraction) {
     final percent = (storage.usedFraction * 100).round();
     out.add(AppNotification(
       id: 'storage:$percent',
@@ -117,7 +121,7 @@ final notificationsProvider = Provider<List<AppNotification>>((ref) {
     ));
   }
 
-  if (scan.outcome == null) {
+  if (remindersOn && scan.outcome == null) {
     out.add(const AppNotification(
       id: 'reminder:never',
       group: NotificationGroup.reminders,

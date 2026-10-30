@@ -70,6 +70,28 @@ abstract final class AppColors {
   static const glowEdge = Color(0x00111827);
   static const lavenderGlow = Color(0x66D1D5DB); // 40%
 
+  // Thẻ hero nền tối (dung lượng ở Home và tab Storage).
+  static const heroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF283343), Color(0xFF141C27), Color(0xFF0A1017)],
+    stops: [0, 0.55, 1],
+  );
+  static const ctaGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF25303F), Color(0xFF0B1220)],
+  );
+  static const heroAccent = Color(0xFF8FB4FF);
+  static const onHero = Color(0xFFFFFFFF);
+  static const onHeroSecondary = Color(0xB8FFFFFF); // 72%
+  static const onHeroMuted = Color(0x8AFFFFFF); // 54%
+  static const onHeroFaint = Color(0x52FFFFFF); // 32%
+  static const heroBorder = Color(0x1FFFFFFF); // 12%
+  static const heroTrack = Color(0x24FFFFFF); // 14%
+  static const heroSurface = Color(0x1FFFFFFF); // 12%
+  static const heroSegmentFree = Color(0x3DFFFFFF); // 24%
+
   static const glass70 = Color(0xB3FFFFFF);
   static const glass80 = Color(0xCCFFFFFF);
   static const glass90 = Color(0xE6FFFFFF);

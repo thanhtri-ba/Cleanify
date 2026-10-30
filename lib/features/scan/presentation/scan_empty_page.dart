@@ -21,7 +21,8 @@ class ScanEmptyPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final threshold = formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
+    final threshold =
+        formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
     final limited =
         ref.watch(mediaAccessProvider).access == MediaAccess.limited;
     final total = ScanCategory.values.length;

@@ -6,7 +6,6 @@ abstract final class AppRoutes {
   static const createAccount = '/create-account';
   static const forgotPassword = '/forgot-password';
   static const verifyEmail = '/verify-email';
-  static const photoAccess = '/photo-access';
   static const fileAccess = '/file-access';
   static const home = '/home';
   static const storage = '/storage';
@@ -28,6 +27,7 @@ abstract final class AppRoutes {
   static const photoLibrary = '/photo-library';
   static const appManager = '/app-manager';
   static const storageAnalysis = '/storage-analysis';
+  static const privacyPolicy = '/privacy-policy';
 
   static const authRoutes = {
     signIn,

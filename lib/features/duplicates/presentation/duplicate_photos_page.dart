@@ -117,7 +117,8 @@ class _DuplicatePhotosPageState extends ConsumerState<DuplicatePhotosPage> {
       bottom: SubBottomBar(
         label: selected.isEmpty
             ? AppStrings.pickPhotosToDelete
-            : AppStrings.deletePhotos(selected.length, formatBytes(selectedBytes)),
+            : AppStrings.deletePhotos(
+                selected.length, formatBytes(selectedBytes)),
         onPressed: selected.isEmpty
             ? null
             : () {
@@ -136,8 +137,7 @@ class _DuplicatePhotosPageState extends ConsumerState<DuplicatePhotosPage> {
                   caption: AppStrings.groupsReclaimable(groups.length),
                 ),
               ),
-              const SubIconTile(
-                  asset: AppAssets.image, size: 48, iconSize: 22),
+              const SubIconTile(asset: AppAssets.image, size: 48, iconSize: 22),
             ],
           ),
         ),
@@ -259,7 +259,8 @@ class _GroupCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   AppStrings.groupTitle(index, items.length),
-                  style: AppText.custom(13.5, FontWeight.w600, AppColors.titleInk),
+                  style:
+                      AppText.custom(13.5, FontWeight.w600, AppColors.titleInk),
                 ),
               ),
               Text(
@@ -335,8 +336,7 @@ class _PhotoCell extends StatelessWidget {
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: AppColors.primary, width: 2),
+                        border: Border.all(color: AppColors.primary, width: 2),
                       ),
                     ),
                   ),

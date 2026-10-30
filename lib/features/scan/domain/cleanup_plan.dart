@@ -142,7 +142,8 @@ class _Index {
     addItems(result.screenshots, ScanCategory.screenshots);
 
     for (final g in result.duplicateGroups) {
-      _selectable[ScanCategory.duplicates]!.addAll(g.removable.map((i) => i.id));
+      _selectable[ScanCategory.duplicates]!
+          .addAll(g.removable.map((i) => i.id));
     }
     for (final g in result.similarGroups) {
       _selectable[ScanCategory.similar]!.addAll(g.removable.map((i) => i.id));

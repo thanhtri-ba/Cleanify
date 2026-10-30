@@ -53,20 +53,20 @@ class OnboardingFrame extends StatelessWidget {
           }
         },
         child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Center(
-            child: FittedBox(
-              fit: BoxFit.contain,
-              child: SizedBox(
-                width: kDesignWidth,
-                height: kDesignHeight,
-                child: Stack(clipBehavior: Clip.none, children: children),
+          backgroundColor: Colors.transparent,
+          body: SafeArea(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: SizedBox(
+                  width: kDesignWidth,
+                  height: kDesignHeight,
+                  child: Stack(clipBehavior: Clip.none, children: children),
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -153,7 +153,8 @@ class OnboardingHeader extends StatelessWidget {
                 child: SizedBox(
                   width: 80,
                   height: 28,
-                  child: Center(child: Text(AppStrings.skip, style: AppText.skip)),
+                  child:
+                      Center(child: Text(AppStrings.skip, style: AppText.skip)),
                 ),
               ),
             ),

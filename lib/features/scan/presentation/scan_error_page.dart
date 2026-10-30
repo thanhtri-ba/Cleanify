@@ -42,7 +42,8 @@ class ScanErrorPage extends ConsumerWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: AppSvg(AppAssets.warning, size: 28, color: AppColors.error),
+              child:
+                  AppSvg(AppAssets.warning, size: 28, color: AppColors.error),
             ),
           ),
         ),

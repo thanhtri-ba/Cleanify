@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
+import 'press_scale.dart';
 
 /// Nút nền trắng có viền, đi cùng [PrimaryButton] (Back, Skip for now...).
 class SecondaryButton extends StatelessWidget {
@@ -35,7 +37,12 @@ class SecondaryButton extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: borderRadius,
-        onTap: onPressed,
+        onTap: onPressed == null
+            ? null
+            : () {
+                HapticFeedback.lightImpact();
+                onPressed!();
+              },
         child: SizedBox(
           height: height,
           width: double.infinity,
@@ -51,7 +58,8 @@ class SecondaryButton extends StatelessWidget {
     );
     if (shadows != null) {
       button = DecoratedBox(
-        decoration: BoxDecoration(borderRadius: borderRadius, boxShadow: shadows),
+        decoration:
+            BoxDecoration(borderRadius: borderRadius, boxShadow: shadows),
         child: button,
       );
     }
@@ -60,7 +68,11 @@ class SecondaryButton extends StatelessWidget {
       enabled: onPressed != null,
       label: label,
       excludeSemantics: true,
-      child: button,
+      child: PressScale(
+        enabled: onPressed != null,
+        scale: 0.975,
+        child: button,
+      ),
     );
   }
 }

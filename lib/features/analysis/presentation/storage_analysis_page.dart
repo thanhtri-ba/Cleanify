@@ -34,8 +34,10 @@ class StorageAnalysisPage extends ConsumerWidget {
     if (breakdown != null) {
       chart = _ChartCard(
         segments: [
-          RingSegment(breakdown.photosBytes.toDouble(), AppColors.breakdownPhotos),
-          RingSegment(breakdown.videosBytes.toDouble(), AppColors.breakdownVideos),
+          RingSegment(
+              breakdown.photosBytes.toDouble(), AppColors.breakdownPhotos),
+          RingSegment(
+              breakdown.videosBytes.toDouble(), AppColors.breakdownVideos),
           RingSegment(breakdown.screenshotsBytes.toDouble(),
               AppColors.breakdownScreenshots),
         ],
@@ -66,7 +68,8 @@ class StorageAnalysisPage extends ConsumerWidget {
           centerBytes: s.usedBytes,
           legend: [
             _LegendItem(AppColors.primary, AppStrings.legendUsed, s.usedBytes),
-            _LegendItem(AppColors.segmentOff, AppStrings.legendFree, s.freeBytes),
+            _LegendItem(
+                AppColors.segmentOff, AppStrings.legendFree, s.freeBytes),
           ],
           footerLabel: AppStrings.analysisUsedOfTotal,
           footerBytes: s.totalBytes,
@@ -105,7 +108,8 @@ class StorageAnalysisPage extends ConsumerWidget {
                 ),
             ],
           ),
-        if (hasDup || hasLarge) const SubSectionLabel(AppStrings.analysisSuggestions),
+        if (hasDup || hasLarge)
+          const SubSectionLabel(AppStrings.analysisSuggestions),
         if (hasDup)
           _TipTile(
             asset: AppAssets.image,
@@ -170,11 +174,13 @@ class _ChartCard extends StatelessWidget {
               children: [
                 Text(
                   center.value,
-                  style: AppText.custom(18, FontWeight.w700, AppColors.titleInk),
+                  style:
+                      AppText.custom(18, FontWeight.w700, AppColors.titleInk),
                 ),
                 Text(
                   center.unit,
-                  style: AppText.custom(11, FontWeight.w500, AppColors.textMuted),
+                  style:
+                      AppText.custom(11, FontWeight.w500, AppColors.textMuted),
                 ),
               ],
             ),
@@ -189,8 +195,8 @@ class _ChartCard extends StatelessWidget {
                       Container(
                         width: 9,
                         height: 9,
-                        decoration:
-                            BoxDecoration(color: l.color, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                            color: l.color, shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -267,16 +273,19 @@ class _TipTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppText.custom(14, FontWeight.w600, AppColors.titleInk),
+                  style:
+                      AppText.custom(14, FontWeight.w600, AppColors.titleInk),
                 ),
                 Text(
                   caption,
-                  style: AppText.custom(12.5, FontWeight.w400, AppColors.textMuted),
+                  style: AppText.custom(
+                      12.5, FontWeight.w400, AppColors.textMuted),
                 ),
               ],
             ),
           ),
-          const AppSvg(AppAssets.chevronRight, size: 14, color: AppColors.textMuted),
+          const AppSvg(AppAssets.chevronRight,
+              size: 14, color: AppColors.textMuted),
         ],
       ),
     );

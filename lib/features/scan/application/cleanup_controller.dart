@@ -29,8 +29,8 @@ class LastCleanupNotifier extends Notifier<LastCleanup?> {
   void record(LastCleanup value) => state = value;
 }
 
-final lastCleanupProvider =
-    NotifierProvider<LastCleanupNotifier, LastCleanup?>(LastCleanupNotifier.new);
+final lastCleanupProvider = NotifierProvider<LastCleanupNotifier, LastCleanup?>(
+    LastCleanupNotifier.new);
 
 class CleanupState {
   const CleanupState({

@@ -24,8 +24,8 @@ class CleanupDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final last = ref.watch(lastCleanupProvider);
-    final hasRemaining = ref.watch(scanControllerProvider.select(
-        (s) => s.outcome?.result.allGroups.isNotEmpty ?? false));
+    final hasRemaining = ref.watch(scanControllerProvider
+        .select((s) => s.outcome?.result.allGroups.isNotEmpty ?? false));
     final ios = isIosPlatform;
 
     if (last == null) {

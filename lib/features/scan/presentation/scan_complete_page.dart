@@ -22,7 +22,8 @@ class ScanCompletePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final outcome = ref.watch(scanControllerProvider).outcome;
     final plan = ref.watch(cleanupPlanProvider);
-    final threshold = formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
+    final threshold =
+        formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
     final result = outcome?.result;
 
     void leave() =>
@@ -100,8 +101,8 @@ class ScanCompletePage extends ConsumerWidget {
     );
   }
 
-  Widget _row(WidgetRef ref, ScanResult result, CleanupPlan plan, ScanCategory c,
-      String threshold) {
+  Widget _row(WidgetRef ref, ScanResult result, CleanupPlan plan,
+      ScanCategory c, String threshold) {
     final scanned = result.completed.contains(c);
     final selectable = plan.selectableIds(c).isNotEmpty;
     final selected = plan.isCategoryFullySelected(c);

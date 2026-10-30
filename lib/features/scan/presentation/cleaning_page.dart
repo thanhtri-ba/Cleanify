@@ -38,8 +38,8 @@ class _CleaningPageState extends ConsumerState<CleaningPage> {
     if (o.declined) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-            content: Text(AppStrings.deletionNotConfirmed)));
+        ..showSnackBar(
+            const SnackBar(content: Text(AppStrings.deletionNotConfirmed)));
       context.pushReplacement(AppRoutes.cleanupReview);
     } else {
       context.pushReplacement(AppRoutes.cleanupComplete);

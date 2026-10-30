@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
@@ -7,15 +6,14 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/primary_button.dart';
-import '../application/onboarding_state.dart';
 import 'onboarding_parts.dart';
 
 /// Trang 1: "A Cleaner Phone Starts Here".
-class OnboardingStep1Page extends ConsumerWidget {
+class OnboardingStep1Page extends StatelessWidget {
   const OnboardingStep1Page({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return OnboardingFrame(
       background: AppColors.onboarding1Gradient,
       onSwipeNext: () => context.push(AppRoutes.onboarding2),
@@ -58,11 +56,12 @@ class OnboardingStep1Page extends ConsumerWidget {
           left: 20,
           right: 20,
           height: 40,
-          // Chưa có màn đăng nhập (đã gỡ để dựng lại): chỉ ghi nhớ đã xem.
+          // Đăng nhập là tùy chọn: mở màn đăng nhập mà không đánh dấu đã xem
+          // onboarding, để người dùng quay lại vẫn thấy luồng giới thiệu.
           child: OnboardingTextAction(
             label: AppStrings.haveAccount,
             style: AppText.subtleLink,
-            onTap: () => ref.read(onboardingSeenProvider.notifier).complete(),
+            onTap: () => context.push(AppRoutes.signIn),
           ),
         ),
       ],

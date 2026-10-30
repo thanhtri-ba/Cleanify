@@ -21,7 +21,8 @@ class ScanPartialPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final result = ref.watch(scanControllerProvider).outcome?.result;
-    final threshold = formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
+    final threshold =
+        formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
     if (result == null) {
       return FlowScaffold(
         title: AppStrings.scanInterrupted,
@@ -30,8 +31,8 @@ class ScanPartialPage extends ConsumerWidget {
       );
     }
     final done = result.completed;
-    final doneBytes = [for (final c in done) result.bytes(c)]
-        .fold<int>(0, (a, b) => a + b);
+    final doneBytes =
+        [for (final c in done) result.bytes(c)].fold<int>(0, (a, b) => a + b);
 
     return FlowScaffold(
       title: AppStrings.scanInterrupted,
@@ -52,8 +53,7 @@ class ScanPartialPage extends ConsumerWidget {
         Column(
           children: [
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
               decoration: BoxDecoration(
                 color: AppColors.errorTint,
                 borderRadius: BorderRadius.circular(9999),

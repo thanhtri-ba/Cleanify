@@ -94,8 +94,8 @@ void main() {
 
     await tester.drag(find.byType(GridView), const Offset(0, -6000));
     await tester.pumpAndSettle();
-    expect(
-        container.read(libraryControllerProvider).items.length, greaterThan(120));
+    expect(container.read(libraryControllerProvider).items.length,
+        greaterThan(120));
 
     for (var i = 0; i < 10; i++) {
       await tester.drag(find.byType(GridView), const Offset(0, -20000));
@@ -106,8 +106,7 @@ void main() {
     expect(state.hasMore, isFalse);
   });
 
-  testWidgets('bấm một ảnh mở màn xem lớn và vuốt sang ảnh kế',
-      (tester) async {
+  testWidgets('bấm một ảnh mở màn xem lớn và vuốt sang ảnh kế', (tester) async {
     await pumpLibrary(tester, items: [photo('a'), photo('b'), photo('c')]);
 
     await tester.tap(find.byType(MediaThumbnail).at(1));

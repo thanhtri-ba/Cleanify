@@ -48,7 +48,8 @@ class _LargeFilesPageState extends ConsumerState<LargeFilesPage> {
       for (final t in const [500 * 1000 * 1000, 1000 * 1000 * 1000])
         if (t > base) t,
     ];
-    final threshold = thresholds[_thresholdIndex.clamp(0, thresholds.length - 1)];
+    final threshold =
+        thresholds[_thresholdIndex.clamp(0, thresholds.length - 1)];
 
     if (result == null) {
       return SubPageScaffold(
@@ -104,7 +105,8 @@ class _LargeFilesPageState extends ConsumerState<LargeFilesPage> {
       bottom: SubBottomBar(
         label: selected.isEmpty
             ? AppStrings.pickVideosToDelete
-            : AppStrings.deleteVideos(selected.length, formatBytes(selectedBytes)),
+            : AppStrings.deleteVideos(
+                selected.length, formatBytes(selectedBytes)),
         onPressed: selected.isEmpty
             ? null
             : () {
@@ -225,11 +227,13 @@ class _VideoRow extends StatelessWidget {
               children: [
                 Text(
                   formatShortDate(item.createdAt),
-                  style: AppText.custom(14, FontWeight.w600, AppColors.titleInk),
+                  style:
+                      AppText.custom(14, FontWeight.w600, AppColors.titleInk),
                 ),
                 Text(
                   '${item.width}×${item.height}',
-                  style: AppText.custom(12, FontWeight.w400, AppColors.textMuted),
+                  style:
+                      AppText.custom(12, FontWeight.w400, AppColors.textMuted),
                 ),
                 const SizedBox(height: 2),
                 Text(

@@ -16,7 +16,8 @@ import 'category_meta.dart';
 /// Các thành phần dùng chung cho luồng quét → xem lại → dọn dẹp.
 
 /// Gói danh sách widget thành các khối hiện lần lượt.
-List<Widget> staggered(List<Widget> items, {int startMs = 40, int stepMs = 60}) {
+List<Widget> staggered(List<Widget> items,
+    {int startMs = 40, int stepMs = 60}) {
   return [
     for (var i = 0; i < items.length; i++)
       FadeSlideIn(
@@ -361,8 +362,8 @@ class CategoryRow extends StatelessWidget {
                     category.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppText.custom(14, FontWeight.w500,
-                        AppColors.titleInk,
+                    style: AppText.custom(
+                        14, FontWeight.w500, AppColors.titleInk,
                         lineHeight: 20),
                   ),
                   if (hint != null)

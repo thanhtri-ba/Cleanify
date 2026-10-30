@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,6 +15,7 @@ import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/primary_button.dart';
+import '../../../core/widgets/tab_scaffold.dart';
 import '../../scan/application/scan_controller.dart';
 import '../../scan/application/scan_providers.dart';
 import '../../scan/domain/device_storage.dart';
@@ -29,127 +31,99 @@ class HomePage extends ConsumerWidget {
   /// Dùng trong test để nhận biết đã vào Home.
   static const pageKey = Key('home-page');
 
-  /// Các mục chưa có màn đích: báo rõ thay vì để nút "chết".
-  static void _comingSoon(BuildContext context) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(
-        content: Text(AppStrings.comingSoon),
-        duration: Duration(seconds: 1),
-      ));
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final storage = ref.watch(deviceStorageProvider);
     final breakdown = ref.watch(storageBreakdownProvider);
     final scan = ref.watch(scanControllerProvider);
     final scanning = scan.phase == ScanPhase.running;
-    void onSoon() => _comingSoon(context);
     void scanNow() {
       if (!scanning) startScanFlow(context, ref);
     }
 
-    return Scaffold(
+    return TabScaffold(
       key: pageKey,
-      backgroundColor: AppColors.canvas,
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              // Chừa chỗ cho thanh trạng thái vì Home không còn header.
-              padding: EdgeInsets.fromLTRB(
-                20,
-                MediaQuery.paddingOf(context).top + 20,
-                20,
-                16,
-              ),
-              child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 60),
-                  child: _StorageCard(
-                    storage: storage,
-                    breakdown: breakdown,
-                    onRetry: () => ref.invalidate(deviceStorageProvider),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 120),
-                  child: _ScanButton(scanning: scanning, onTap: scanNow),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 180),
-                  child: _NotificationsRow(
-                      onTap: () => context.push(AppRoutes.notifications)),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 240),
-                  child: _DuplicatesCard(
-                    result: scan.outcome?.result,
-                    onReview: () => context.push(AppRoutes.duplicates),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 300),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _LargeFilesCard(
-                          threshold:
-                              ref.watch(scanConfigProvider).largeVideoBytes,
-                          onTap: () => context.push(AppRoutes.largeFiles),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _AppManagerCard(
-                              onTap: () => context.push(AppRoutes.appManager))),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 360),
-                  child: _WideLinkCard(
-                    onTap: () => context.push(AppRoutes.photoLibrary),
-                    title: AppStrings.photoLibrary,
-                    subtitle: AppStrings.photoLibrarySubtitle,
-                    icon: AppAssets.image,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                FadeSlideIn(
-                  delay: const Duration(milliseconds: 420),
-                  child: _WideLinkCard(
-                    onTap: () => context.push(AppRoutes.storageAnalysis),
-                    title: AppStrings.storageAnalysis,
-                    subtitle: AppStrings.deepAudit,
-                    icon: AppAssets.barChart,
-                  ),
-                ),
-              ],
+      current: AppTab.home,
+      onScan: scanNow,
+      body: SingleChildScrollView(
+        // Chừa chỗ cho thanh trạng thái vì Home không còn header.
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.paddingOf(context).top + 20,
+          20,
+          16,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 60),
+              child: _StorageCard(
+                storage: storage,
+                breakdown: breakdown,
+                onRetry: () => ref.invalidate(deviceStorageProvider),
               ),
             ),
-          ),
-          AppBottomNav(
-            current: AppTab.home,
-            onTap: (tab) {
-              if (tab == AppTab.scan) {
-                scanNow();
-              } else if (tab != AppTab.home) {
-                onSoon();
-              }
-            },
-          ),
-        ],
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 120),
+              child: _ScanButton(scanning: scanning, onTap: scanNow),
+            ),
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 180),
+              child: _NotificationsRow(
+                  onTap: () => context.push(AppRoutes.notifications)),
+            ),
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 240),
+              child: _DuplicatesCard(
+                result: scan.outcome?.result,
+                onReview: () => context.push(AppRoutes.duplicates),
+              ),
+            ),
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 300),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _LargeFilesCard(
+                      threshold: ref.watch(scanConfigProvider).largeVideoBytes,
+                      onTap: () => context.push(AppRoutes.largeFiles),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: _AppManagerCard(
+                          onTap: () => context.push(AppRoutes.appManager))),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 360),
+              child: _WideLinkCard(
+                onTap: () => context.push(AppRoutes.photoLibrary),
+                title: AppStrings.photoLibrary,
+                subtitle: AppStrings.photoLibrarySubtitle,
+                icon: AppAssets.image,
+              ),
+            ),
+            const SizedBox(height: 12),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 420),
+              child: _WideLinkCard(
+                onTap: () => context.push(AppRoutes.storageAnalysis),
+                title: AppStrings.storageAnalysis,
+                subtitle: AppStrings.deepAudit,
+                icon: AppAssets.barChart,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -189,7 +163,19 @@ class _StorageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-      decoration: _cardDecoration(28),
+      decoration: BoxDecoration(
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: AppColors.heroBorder),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x2E111827),
+            blurRadius: 32,
+            spreadRadius: -12,
+            offset: Offset(0, 18),
+          ),
+        ],
+      ),
       child: storage.when(
         data: (s) => _StorageData(s, breakdown),
         loading: () => _StorageData(null, breakdown),
@@ -197,10 +183,17 @@ class _StorageCard extends StatelessWidget {
           children: [
             _StorageData(null, breakdown),
             const SizedBox(height: 8),
-            Text(AppStrings.storageUnavailable, style: AppText.caption),
+            Text(
+              AppStrings.storageUnavailable,
+              style: AppText.custom(12, FontWeight.w400, AppColors.onHeroMuted),
+            ),
             TextButton(
               onPressed: onRetry,
-              child: Text(AppStrings.retry, style: AppText.linkAccent),
+              child: Text(
+                AppStrings.retry,
+                style: AppText.custom(13, FontWeight.w600, AppColors.onHero,
+                    lineHeight: 20),
+              ),
             ),
           ],
         ),
@@ -243,17 +236,18 @@ class _StorageData extends StatelessWidget {
                 AppColors.breakdownScreenshots),
           ]
         : [
-            _Segment(AppStrings.legendUsed, s?.usedBytes ?? 0,
-                AppColors.accentDeep),
             _Segment(
-                AppStrings.legendFree, s?.freeBytes ?? 0, AppColors.chip),
+                AppStrings.legendUsed, s?.usedBytes ?? 0, AppColors.onHero),
+            _Segment(AppStrings.legendFree, s?.freeBytes ?? 0,
+                AppColors.heroSegmentFree),
           ];
 
     final labelStyle = AppText.custom(
-        11, FontWeight.w600, AppColors.textSecondary,
+        11, FontWeight.w600, AppColors.onHeroMuted,
         lineHeight: 14);
-    final smallBlue =
-        AppText.custom(11, FontWeight.w600, AppColors.textBlue, lineHeight: 14);
+    final smallMuted = AppText.custom(
+        11, FontWeight.w600, AppColors.onHeroMuted,
+        lineHeight: 14);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,7 +264,7 @@ class _StorageData extends StatelessWidget {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: AppColors.accentDeep,
+                          color: AppColors.onHero,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -279,36 +273,39 @@ class _StorageData extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      _CountText(
-                        bytes: s?.usedBytes,
-                        pick: (b) => splitBytes(b).value,
-                        fallback: '—',
-                        style: AppText.custom(
-                            50, FontWeight.w700, AppColors.titleInk,
-                            lineHeight: 52, letterSpacing: -1.1),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        used?.unit ?? 'GB',
-                        style: AppText.custom(
-                            20, FontWeight.w600, AppColors.textSecondary,
-                            lineHeight: 26, letterSpacing: -0.3),
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          s == null ? '' : '/ ${formatBytes(s.totalBytes)}',
-                          overflow: TextOverflow.ellipsis,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        _CountText(
+                          bytes: s?.usedBytes,
+                          pick: (b) => splitBytes(b).value,
+                          fallback: '—',
                           style: AppText.custom(
-                              14, FontWeight.w400, AppColors.textBlue,
-                              lineHeight: 20),
+                              50, FontWeight.w700, AppColors.onHero,
+                              lineHeight: 52, letterSpacing: -1.1),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          used?.unit ?? 'GB',
+                          style: AppText.custom(
+                              20, FontWeight.w600, AppColors.onHeroSecondary,
+                              lineHeight: 26, letterSpacing: -0.3),
+                        ),
+                        if (s != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '/ ${formatBytes(s.totalBytes)}',
+                            style: AppText.custom(
+                                14, FontWeight.w400, AppColors.onHeroFaint,
+                                lineHeight: 20),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -332,11 +329,11 @@ class _StorageData extends StatelessWidget {
                         pick: (v) => '$v%',
                         fallback: '—',
                         style: AppText.custom(
-                            14, FontWeight.w700, AppColors.titleInk,
+                            14, FontWeight.w700, AppColors.onHero,
                             lineHeight: 14),
                       ),
                       const SizedBox(height: 2),
-                      Text(AppStrings.used, style: smallBlue),
+                      Text(AppStrings.used, style: smallMuted),
                     ],
                   ),
                 ],
@@ -350,20 +347,20 @@ class _StorageData extends StatelessWidget {
           children: [
             Text(
               AppStrings.storageDistribution,
-              style: AppText.custom(14, FontWeight.w500, AppColors.titleInk,
+              style: AppText.custom(14, FontWeight.w500, AppColors.onHero,
                   lineHeight: 20),
             ),
             if (s != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.chip,
+                  color: AppColors.heroSurface,
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
                   AppStrings.freeHeadroom(formatBytes(s.freeBytes)),
                   style: AppText.custom(
-                      11, FontWeight.w500, AppColors.accentDeep,
+                      11, FontWeight.w500, AppColors.onHeroSecondary,
                       lineHeight: 14),
                 ),
               ),
@@ -374,6 +371,7 @@ class _StorageData extends StatelessWidget {
           segments: segments,
           total: b?.totalBytes ?? s?.totalBytes ?? 0,
           hasData: s != null,
+          onDark: true,
         ),
       ],
     );
@@ -394,16 +392,20 @@ class _GaugePainter extends CustomPainter {
     final track = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..color = AppColors.chip;
+      ..color = AppColors.heroTrack;
     canvas.drawArc(arc, 0, math.pi * 2, false, track);
     if (fraction <= 0) return;
     final progress = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..color = AppColors.accentDeep;
-    canvas.drawArc(arc, -math.pi / 2,
-        math.pi * 2 * fraction.clamp(0.0, 1.0), false, progress);
+      ..shader = const SweepGradient(
+        startAngle: -math.pi / 2,
+        endAngle: math.pi * 1.5,
+        colors: [Color(0xFF7FA8FF), Color(0xFFFFFFFF)],
+      ).createShader(arc);
+    canvas.drawArc(arc, -math.pi / 2, math.pi * 2 * fraction.clamp(0.0, 1.0),
+        false, progress);
   }
 
   @override
@@ -417,11 +419,13 @@ class _Distribution extends StatefulWidget {
     required this.segments,
     required this.total,
     required this.hasData,
+    this.onDark = false,
   });
 
   final List<_Segment> segments;
   final int total;
   final bool hasData;
+  final bool onDark;
 
   @override
   State<_Distribution> createState() => _DistributionState();
@@ -430,7 +434,10 @@ class _Distribution extends StatefulWidget {
 class _DistributionState extends State<_Distribution> {
   int? _selected;
 
-  void _pick(int i) => setState(() => _selected = _selected == i ? null : i);
+  void _pick(int i) {
+    HapticFeedback.selectionClick();
+    setState(() => _selected = _selected == i ? null : i);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +448,7 @@ class _DistributionState extends State<_Distribution> {
         Container(
           height: 10,
           decoration: BoxDecoration(
-            color: AppColors.chip,
+            color: widget.onDark ? AppColors.heroTrack : AppColors.chip,
             borderRadius: BorderRadius.circular(9999),
           ),
           clipBehavior: Clip.antiAlias,
@@ -459,8 +466,8 @@ class _DistributionState extends State<_Distribution> {
                       child: Container(
                         width: widget.total <= 0
                             ? 0
-                            : math.max(
-                                0.0, c.maxWidth * v * seg.bytes / widget.total - 2),
+                            : math.max(0.0,
+                                c.maxWidth * v * seg.bytes / widget.total - 2),
                         margin: const EdgeInsets.only(right: 2),
                         color: seg.color,
                       ),
@@ -487,7 +494,9 @@ class _DistributionState extends State<_Distribution> {
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: _selected == i
-                            ? AppColors.chip
+                            ? (widget.onDark
+                                ? AppColors.heroSurface
+                                : AppColors.chip)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -495,6 +504,7 @@ class _DistributionState extends State<_Distribution> {
                         color: seg.color,
                         label: seg.label,
                         value: widget.hasData ? formatBytes(seg.bytes) : '—',
+                        onDark: widget.onDark,
                       ),
                     ),
                   ),
@@ -512,11 +522,13 @@ class _Legend extends StatelessWidget {
     required this.color,
     required this.label,
     required this.value,
+    this.onDark = false,
   });
 
   final Color color;
   final String label;
   final String value;
+  final bool onDark;
 
   @override
   Widget build(BuildContext context) {
@@ -533,7 +545,8 @@ class _Legend extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               label,
-              style: AppText.custom(11, FontWeight.w600, AppColors.textBlue,
+              style: AppText.custom(11, FontWeight.w600,
+                  onDark ? AppColors.onHeroMuted : AppColors.textBlue,
                   lineHeight: 14),
             ),
           ],
@@ -541,7 +554,8 @@ class _Legend extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           value,
-          style: AppText.custom(12, FontWeight.w600, AppColors.titleInk,
+          style: AppText.custom(12, FontWeight.w600,
+              onDark ? AppColors.onHero : AppColors.titleInk,
               lineHeight: 16),
         ),
       ],
@@ -574,8 +588,7 @@ class _CountText extends StatelessWidget {
       tween: Tween(begin: 0, end: v.toDouble()),
       duration: const Duration(milliseconds: 1000),
       curve: Curves.easeOutCubic,
-      builder: (context, value, _) =>
-          Text(pick(value.round()), style: style),
+      builder: (context, value, _) => Text(pick(value.round()), style: style),
     );
   }
 }
@@ -625,6 +638,7 @@ class _ScanButtonState extends State<_ScanButton>
           height: 58,
           radius: 9999,
           isLoading: widget.scanning,
+          gradient: AppColors.ctaGradient,
           leading:
               const AppSvg(AppAssets.scanTarget, size: 18, color: Colors.white),
           labelStyle: AppText.custom(14, FontWeight.w600, Colors.white,
@@ -1054,7 +1068,8 @@ class _SquareCard extends StatelessWidget {
                               lineHeight: 14),
                         ),
                         const SizedBox(width: 8),
-                        AppSvg(AppAssets.arrowRight, size: 12, color: linkColor),
+                        AppSvg(AppAssets.arrowRight,
+                            size: 12, color: linkColor),
                       ],
                     ),
                   ],
@@ -1150,15 +1165,13 @@ class _WideLinkCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppText.custom(
-                      16, FontWeight.w500, AppColors.titleInk,
+                  style: AppText.custom(16, FontWeight.w500, AppColors.titleInk,
                       lineHeight: 24),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: AppText.custom(
-                      14, FontWeight.w400, AppColors.textBlue,
+                  style: AppText.custom(14, FontWeight.w400, AppColors.textBlue,
                       lineHeight: 20),
                 ),
               ],
@@ -1173,7 +1186,8 @@ class _WideLinkCard extends StatelessWidget {
               shape: BoxShape.circle,
             ),
             child: const Center(
-              child: AppSvg(AppAssets.arrowUpRight, size: 14, color: Colors.white),
+              child:
+                  AppSvg(AppAssets.arrowUpRight, size: 14, color: Colors.white),
             ),
           ),
         ],

@@ -8,6 +8,7 @@ class MediaItem {
     required this.width,
     required this.height,
     required this.createdAt,
+    this.modifiedAt,
     this.isScreenshot = false,
     this.sizeBytes,
   });
@@ -17,6 +18,9 @@ class MediaItem {
   final int width;
   final int height;
   final DateTime createdAt;
+
+  /// Ngày sửa gần nhất; dùng để biết ảnh đã đổi hay chưa khi quét tăng dần.
+  final DateTime? modifiedAt;
   final bool isScreenshot;
 
   /// Dung lượng file; null khi chưa đo hoặc không đọc được (vd. còn trên iCloud).
@@ -30,6 +34,7 @@ class MediaItem {
         width: width,
         height: height,
         createdAt: createdAt,
+        modifiedAt: modifiedAt,
         isScreenshot: isScreenshot,
         sizeBytes: bytes,
       );

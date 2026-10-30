@@ -126,7 +126,8 @@ void main() {
     final container = makeContainer(repo);
     final controller = container.read(signInControllerProvider.notifier);
 
-    final first = controller.submit(email: 'an@example.com', password: password);
+    final first =
+        controller.submit(email: 'an@example.com', password: password);
     expect(container.read(signInControllerProvider).isSubmitting, isTrue);
     await controller.submit(email: 'an@example.com', password: password);
     await first;

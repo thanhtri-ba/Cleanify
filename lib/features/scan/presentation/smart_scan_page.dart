@@ -91,7 +91,8 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
     ref.listen<ScanState>(scanControllerProvider, (_, next) => _handle(next));
     final scan = ref.watch(scanControllerProvider);
     final progress = scan.progress;
-    final threshold = formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
+    final threshold =
+        formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
     final bottom = math.max(24.0, MediaQuery.viewPaddingOf(context).bottom);
 
     return PopScope(
@@ -472,8 +473,8 @@ class _ChamberPainter extends CustomPainter {
 
     // Hạt bụi tĩnh.
     for (final (pos, r, color) in _dust) {
-      canvas.drawCircle(
-          Offset(pos.dx * size.width, pos.dy * size.height), r, Paint()..color = color);
+      canvas.drawCircle(Offset(pos.dx * size.width, pos.dy * size.height), r,
+          Paint()..color = color);
     }
 
     // Vòng ngoài quay thuận.
@@ -626,8 +627,7 @@ class _StatusText extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   AppStrings.scanningTitle,
-                  style: AppText.custom(
-                      18, FontWeight.w600, AppColors.titleInk,
+                  style: AppText.custom(18, FontWeight.w600, AppColors.titleInk,
                       lineHeight: 24, letterSpacing: -0.45),
                 ),
               ],
@@ -697,7 +697,8 @@ class _StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget col(String value, String label, {bool accent = false, bool first = false}) {
+    Widget col(String value, String label,
+        {bool accent = false, bool first = false}) {
       return Expanded(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
@@ -840,7 +841,8 @@ class _ScanRow extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: AppSvg(category.icon, size: 16.67, color: AppColors.accent),
+              child:
+                  AppSvg(category.icon, size: 16.67, color: AppColors.accent),
             ),
           ),
           const SizedBox(width: 12),

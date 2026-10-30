@@ -76,9 +76,8 @@ class LibraryController extends Notifier<LibraryState> {
 
   Future<void> _loadPage(int generation) async {
     try {
-      final page = await ref
-          .read(mediaSourceProvider)
-          .page(_nextPage, libraryPageSize);
+      final page =
+          await ref.read(mediaSourceProvider).page(_nextPage, libraryPageSize);
       if (generation != _generation) return;
       _nextPage++;
       final items = [...state.items, ...page];

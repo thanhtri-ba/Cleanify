@@ -46,7 +46,11 @@ class CleanupOutcome {
 /// Dừng ngay khi: bị hủy, người dùng từ chối xác nhận, hoặc có lỗi, để không
 /// hỏi lặp lại và không xóa thêm ngoài ý muốn.
 class CleanupRunner {
-  CleanupRunner(this.deleter, {this.chunkSize = 500});
+  /// Mặc định xoá tất cả mục đã chọn trong một lần gọi, nên iOS chỉ hỏi xác nhận
+  /// một lần. [chunkSize] chỉ dùng để chia nhỏ khi cần (vd. trong test).
+  CleanupRunner(this.deleter, {this.chunkSize = _allAtOnce});
+
+  static const int _allAtOnce = 1 << 30;
 
   final MediaDeleter deleter;
   final int chunkSize;

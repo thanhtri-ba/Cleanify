@@ -46,7 +46,8 @@ void main() {
 
   group('MediaAccessController', () {
     test('request cập nhật trạng thái và đánh dấu đã xin', () async {
-      final gateway = FakeMediaAccessGateway(requestResult: MediaAccess.limited);
+      final gateway =
+          FakeMediaAccessGateway(requestResult: MediaAccess.limited);
       final container = make(gateway);
 
       final result =

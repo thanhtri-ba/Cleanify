@@ -145,7 +145,8 @@ class _NotificationTile extends StatelessWidget {
               if (time != null)
                 Text(
                   time,
-                  style: AppText.custom(11, FontWeight.w400, AppColors.textMuted),
+                  style:
+                      AppText.custom(11, FontWeight.w400, AppColors.textMuted),
                 ),
               if (unread) ...[
                 const SizedBox(height: 6),

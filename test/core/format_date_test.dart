@@ -8,9 +8,12 @@ void main() {
 
   test('agoLabel theo phút, giờ, ngày', () {
     final now = DateTime(2026, 10, 29, 12);
-    expect(agoLabel(now, now: now), 'Vừa xong');
-    expect(agoLabel(now.subtract(const Duration(minutes: 8)), now: now), '8 phút');
-    expect(agoLabel(now.subtract(const Duration(hours: 2)), now: now), '2 giờ');
-    expect(agoLabel(now.subtract(const Duration(days: 3)), now: now), '3 ngày');
+    expect(agoLabel(now, now: now), 'Just now');
+    expect(agoLabel(now.subtract(const Duration(minutes: 8)), now: now),
+        '8 min ago');
+    expect(
+        agoLabel(now.subtract(const Duration(hours: 2)), now: now), '2 hr ago');
+    expect(agoLabel(now.subtract(const Duration(days: 3)), now: now),
+        '3 days ago');
   });
 }
