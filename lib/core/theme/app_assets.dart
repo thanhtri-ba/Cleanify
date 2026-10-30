@@ -46,6 +46,11 @@ abstract final class AppAssets {
   static const folderPlus = '$_icons/folder_plus.svg';
   static const gridDots = '$_icons/grid_dots.svg';
   static const trash = '$_icons/trash.svg';
+  static const history = '$_icons/history.svg';
+  static const alertCircle = '$_icons/alert_circle.svg';
+  static const sparkles = '$_icons/sparkles.svg';
+  static const headphones = '$_icons/headphones.svg';
+  static const arrowLeft = '$_icons/arrow_left.svg';
 
   static const onboarding1 = '$_images/onboarding_1.png';
   static const onboarding2 = '$_images/onboarding_2.png';

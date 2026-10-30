@@ -141,12 +141,22 @@ class _Index {
     addItems(result.largeVideos, ScanCategory.largeVideos);
     addItems(result.screenshots, ScanCategory.screenshots);
 
+    // Bản giữ của một nhóm không được xóa qua nhóm khác (ảnh có thể thuộc cả
+    // nhóm trùng lẫn nhóm tương tự).
+    final kept = <String>{};
+    for (final g in [...result.duplicateGroups, ...result.similarGroups]) {
+      final removable = g.removable.map((i) => i.id).toSet();
+      for (final item in g.items) {
+        if (!removable.contains(item.id)) kept.add(item.id);
+      }
+    }
     for (final g in result.duplicateGroups) {
-      _selectable[ScanCategory.duplicates]!
-          .addAll(g.removable.map((i) => i.id));
+      _selectable[ScanCategory.duplicates]!.addAll(
+          g.removable.map((i) => i.id).where((id) => !kept.contains(id)));
     }
     for (final g in result.similarGroups) {
-      _selectable[ScanCategory.similar]!.addAll(g.removable.map((i) => i.id));
+      _selectable[ScanCategory.similar]!.addAll(
+          g.removable.map((i) => i.id).where((id) => !kept.contains(id)));
     }
     _selectable[ScanCategory.largeVideos]!
         .addAll(ungrouped(result.largeVideos));

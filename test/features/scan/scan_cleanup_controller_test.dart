@@ -8,8 +8,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/fake_media_source.dart';
 
-class _Deleter implements MediaDeleter {
-  _Deleter({this.confirm = true});
+class FakeDeleter implements MediaDeleter {
+  FakeDeleter({this.confirm = true});
 
   final bool confirm;
   final List<List<String>> calls = [];
@@ -21,7 +21,7 @@ class _Deleter implements MediaDeleter {
   }
 }
 
-ProviderContainer makeContainer(_Deleter deleter) {
+ProviderContainer makeContainer(FakeDeleter deleter) {
   final source = FakeMediaSource(
     [
       photo('a'),
@@ -42,7 +42,7 @@ ProviderContainer makeContainer(_Deleter deleter) {
 
 void main() {
   test('quét xong: có kết quả và kế hoạch xóa chọn sẵn các mục', () async {
-    final container = makeContainer(_Deleter());
+    final container = makeContainer(FakeDeleter());
 
     await container.read(scanControllerProvider.notifier).start();
 
@@ -57,7 +57,7 @@ void main() {
   });
 
   test('xóa thành công: gỡ mục đã xóa khỏi kết quả và kế hoạch', () async {
-    final deleter = _Deleter();
+    final deleter = FakeDeleter();
     final container = makeContainer(deleter);
     await container.read(scanControllerProvider.notifier).start();
 
@@ -76,7 +76,7 @@ void main() {
   });
 
   test('người dùng từ chối xác nhận: không gỡ gì khỏi kết quả', () async {
-    final container = makeContainer(_Deleter(confirm: false));
+    final container = makeContainer(FakeDeleter(confirm: false));
     await container.read(scanControllerProvider.notifier).start();
 
     await container.read(cleanupControllerProvider.notifier).start();
@@ -93,7 +93,7 @@ void main() {
   });
 
   test('không có kế hoạch xóa thì start() không làm gì', () async {
-    final deleter = _Deleter();
+    final deleter = FakeDeleter();
     final container = makeContainer(deleter);
 
     await container.read(cleanupControllerProvider.notifier).start();

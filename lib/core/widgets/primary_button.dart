@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
 import 'press_scale.dart';
+import '../theme/app_tokens.dart';
 
 class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
@@ -16,7 +17,7 @@ class PrimaryButton extends StatelessWidget {
     this.leading,
     this.trailing,
     this.prominentShadow = false,
-    this.color = AppColors.primary,
+    this.color,
     this.gradient,
     this.radius = 16,
     this.shadows,
@@ -32,7 +33,7 @@ class PrimaryButton extends StatelessWidget {
 
   /// Bóng đậm dùng cho nút CTA ở onboarding.
   final bool prominentShadow;
-  final Color color;
+  final Color? color;
 
   /// Khi có, nền nút dùng gradient thay cho [color].
   final Gradient? gradient;
@@ -58,7 +59,12 @@ class PrimaryButton extends StatelessWidget {
           child: Container(
             height: height,
             decoration: BoxDecoration(
-              color: gradient == null ? color : null,
+              color: gradient == null
+                  ? (color ??
+                      (Theme.of(context).brightness == Brightness.dark
+                          ? context.tokens.cta
+                          : AppColors.primary))
+                  : null,
               gradient: gradient,
               borderRadius: borderRadius,
               boxShadow: shadows ??
@@ -85,12 +91,12 @@ class PrimaryButton extends StatelessWidget {
                     : null,
                 child: Center(
                   child: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: context.tokens.surface,
                           ),
                         )
                       : Row(

@@ -22,7 +22,8 @@ class FeatureSet {
     final out = ByteData(_headerBytes + descriptors.length + points.length * 4);
     out.setInt32(0, count, Endian.little);
     final bytes = out.buffer.asUint8List();
-    bytes.setRange(_headerBytes, _headerBytes + descriptors.length, descriptors);
+    bytes.setRange(
+        _headerBytes, _headerBytes + descriptors.length, descriptors);
     final pointsAt = _headerBytes + descriptors.length;
     for (var i = 0; i < points.length; i++) {
       out.setFloat32(pointsAt + i * 4, points[i], Endian.little);

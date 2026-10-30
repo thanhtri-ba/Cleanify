@@ -48,7 +48,8 @@ final List<List<double>> _dct = [
 /// Tính PDQ từ ảnh xám 64x64 (4096 giá trị 0..255, theo hàng).
 Pdq pdqFromLuma(List<int> luma) {
   if (luma.length != pdqSide * pdqSide) {
-    throw ArgumentError('Cần ${pdqSide * pdqSide} giá trị, nhận ${luma.length}');
+    throw ArgumentError(
+        'Cần ${pdqSide * pdqSide} giá trị, nhận ${luma.length}');
   }
   const n = pdqSide;
 

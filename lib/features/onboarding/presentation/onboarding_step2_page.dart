@@ -6,6 +6,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/secondary_button.dart';
@@ -53,7 +54,7 @@ class OnboardingStep2Page extends StatelessWidget {
           child: PrimaryButton(
             label: AppStrings.continueLabel,
             height: 56,
-            color: AppColors.cta,
+            color: context.tokens.cta,
             labelStyle: AppText.ctaLarge,
             trailing: const AppSvg(AppAssets.arrowRight, size: 12),
             prominentShadow: true,
@@ -68,7 +69,7 @@ class OnboardingStep2Page extends StatelessWidget {
           child: SecondaryButton(
             label: AppStrings.back,
             height: 54,
-            borderColor: AppColors.borderNeutral,
+            borderColor: context.tokens.border,
             labelStyle: AppText.skip,
             // Bóng hơi đỏ này đúng theo Figma.
             shadows: const [

@@ -6,7 +6,6 @@ import 'package:workmanager/workmanager.dart';
 
 import 'app.dart';
 import 'core/storage/preferences_provider.dart';
-import 'features/auth/application/auth_session.dart';
 import 'features/scan/application/scan_providers.dart';
 import 'features/scan/background/background_scan.dart';
 import 'features/scan/data/opencv_features.dart';
@@ -34,8 +33,6 @@ Future<void> main() async {
   } catch (_) {
     // Quét nền không khởi tạo được thì app vẫn chạy bình thường.
   }
-  // Khôi phục phiên đăng nhập trước khi router quyết định màn hình đầu tiên.
-  await container.read(authSessionProvider.notifier).restore();
   runApp(
     UncontrolledProviderScope(
       container: container,

@@ -29,9 +29,9 @@ void main() {
   test('gián đoạn nhưng có danh mục xong -> Partial', () {
     expect(
       routeForOutcome(
-        ScanOutcome(
+        const ScanOutcome(
           end: ScanEnd.interrupted,
-          result: const ScanResult(completed: {ScanCategory.screenshots}),
+          result: ScanResult(completed: {ScanCategory.screenshots}),
         ),
       ),
       AppRoutes.scanPartial,

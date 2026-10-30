@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/theme/app_assets.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/sub_page_scaffold.dart';
 import '../../scan/application/scan_controller.dart';
 import '../../scan/presentation/scan_actions.dart';
@@ -47,7 +47,7 @@ class ScanReminderPage extends ConsumerWidget {
                           ? AppStrings.reminderDone
                           : AppStrings.reminderNever,
                       style: AppText.custom(
-                          16, FontWeight.w600, AppColors.titleInk),
+                          16, FontWeight.w600, context.tokens.textPrimary),
                     ),
                     const SizedBox(height: 3),
                     Text(
@@ -55,7 +55,7 @@ class ScanReminderPage extends ConsumerWidget {
                           ? AppStrings.reminderDoneBody
                           : AppStrings.reminderNeverBody,
                       style: AppText.custom(
-                          13, FontWeight.w400, AppColors.textMuted,
+                          13, FontWeight.w400, context.tokens.textMuted,
                           lineHeight: 18),
                     ),
                   ],

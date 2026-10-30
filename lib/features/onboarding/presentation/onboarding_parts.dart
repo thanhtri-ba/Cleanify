@@ -489,15 +489,15 @@ class GlassBadgeHero extends StatelessWidget {
                 ),
               ),
             ),
-            Positioned(
+            const Positioned(
               right: -4,
               bottom: -8,
               child: FadeSlideIn(
-                delay: const Duration(milliseconds: 650),
-                duration: const Duration(milliseconds: 700),
+                delay: Duration(milliseconds: 650),
+                duration: Duration(milliseconds: 700),
                 dy: 10,
                 scaleFrom: 0.85,
-                child: const _CleanableBadge(),
+                child: _CleanableBadge(),
               ),
             ),
           ],

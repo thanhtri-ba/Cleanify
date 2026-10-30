@@ -7,8 +7,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/fade_slide_in.dart';
@@ -18,7 +18,7 @@ import '../application/scan_routing.dart';
 import '../domain/scan_models.dart';
 import 'widgets/category_meta.dart';
 
-/// Màn quét (Figma 74:2432). Hiển thị tiến độ quét thật từ
+/// Màn quét theo Figma node 127:1012. Hiển thị tiến độ quét thật từ
 /// [scanControllerProvider]; khi quét xong tự chuyển tới màn kết quả phù hợp.
 class SmartScanPage extends ConsumerStatefulWidget {
   const SmartScanPage({super.key});
@@ -29,19 +29,33 @@ class SmartScanPage extends ConsumerStatefulWidget {
 
 class _SmartScanPageState extends ConsumerState<SmartScanPage>
     with SingleTickerProviderStateMixin {
-  /// Chu kỳ 12s; các vòng quay là bội số nguyên của chu kỳ nên lặp liền mạch.
+  /// Chu kỳ 24s (chậm hơn để dễ theo dõi); các nhịp đều là bội số nguyên của chu kỳ nên lặp liền mạch.
   late final AnimationController _loop = AnimationController(
     vsync: this,
-    duration: const Duration(seconds: 12),
+    duration: const Duration(seconds: 24),
   );
   bool _handled = false;
+
+  /// Thanh tiến độ hiển thị chạy đủ 1 → 100% trong 15s, không phụ thuộc tốc độ quét thật.
+  late final AnimationController _sweep = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 15),
+  )
+    ..addListener(() => setState(() {}))
+    ..addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        _handle(ref.read(scanControllerProvider));
+      }
+    });
 
   @override
   void initState() {
     super.initState();
     // Lượt quét có thể đã xong trước khi trang dựng xong.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _handle(ref.read(scanControllerProvider));
+      if (!mounted) return;
+      _sweep.forward();
+      _handle(ref.read(scanControllerProvider));
     });
   }
 
@@ -58,6 +72,7 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
   @override
   void dispose() {
     _loop.dispose();
+    _sweep.dispose();
     super.dispose();
   }
 
@@ -65,6 +80,11 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
     if (_handled) return;
     final outcome = state.outcome;
     if (state.phase != ScanPhase.finished || outcome == null) return;
+    // Quét thật có thể xong sớm: vẫn chờ thanh 1→100% chạy hết. Người dùng tự dừng thì thoát ngay.
+    if (outcome.end != ScanEnd.cancelled &&
+        _sweep.status != AnimationStatus.completed) {
+      return;
+    }
     _handled = true;
     final route = routeForOutcome(outcome);
     if (route == null) {
@@ -72,6 +92,29 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
     } else {
       context.pushReplacement(route);
     }
+  }
+
+  /// Tiến độ hiển thị: số % chạy 1→100%, các hạng mục lần lượt xong theo cùng nhịp.
+  ScanProgress _displayProgress(ScanProgress real) {
+    final f = _sweep.value.clamp(0.0, 1.0);
+    const n = ScanCategory.values.length;
+    final statuses = <ScanCategory, CategoryStatus>{};
+    for (final (i, c) in ScanCategory.values.indexed) {
+      final start = i / n;
+      final end = (i + 1) / n;
+      statuses[c] = f >= end
+          ? CategoryStatus.done
+          : f >= start
+              ? CategoryStatus.scanning
+              : CategoryStatus.pending;
+    }
+    return ScanProgress(
+      statuses: statuses,
+      itemsChecked: real.itemsChecked,
+      total: real.total,
+      fraction: f < 0.01 ? 0.01 : f,
+      estimatedBytes: real.estimatedBytes,
+    );
   }
 
   void _stop() => ref.read(scanControllerProvider.notifier).cancel();
@@ -90,10 +133,10 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
   Widget build(BuildContext context) {
     ref.listen<ScanState>(scanControllerProvider, (_, next) => _handle(next));
     final scan = ref.watch(scanControllerProvider);
-    final progress = scan.progress;
+    final progress = _displayProgress(scan.progress);
     final threshold =
         formatBytes(ref.watch(scanConfigProvider).largeVideoBytes);
-    final bottom = math.max(24.0, MediaQuery.viewPaddingOf(context).bottom);
+    final bottom = math.max(16.0, MediaQuery.viewPaddingOf(context).bottom);
 
     return PopScope(
       canPop: false,
@@ -101,10 +144,9 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
         if (!didPop) _stop();
       },
       child: Scaffold(
-        backgroundColor: AppColors.canvas,
+        backgroundColor: context.tokens.surface,
         body: Stack(
           children: [
-            const _Glows(),
             Column(
               children: [
                 SafeArea(
@@ -117,26 +159,26 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
                         _RoundButton(
                           label: AppStrings.back,
                           onTap: _stop,
-                          child: const AppSvg(
+                          child: AppSvg(
                             AppAssets.chevronLeft,
                             size: 18,
-                            color: AppColors.titleInk,
+                            color: context.tokens.textPrimary,
                           ),
                         ),
                         Text(
                           AppStrings.smartScan,
                           style: AppText.custom(
-                              20, FontWeight.w600, AppColors.titleInk,
+                              20, FontWeight.w600, context.tokens.textPrimary,
                               lineHeight: 26, letterSpacing: -0.5),
                         ),
                         _RoundButton(
                           label: AppStrings.provisionalFindings,
                           onTap: _more,
-                          child: const AppSvg(
+                          child: AppSvg(
                             AppAssets.moreHorizontal,
                             width: 14,
                             height: 4,
-                            color: AppColors.titleInk,
+                            color: context.tokens.textPrimary,
                           ),
                         ),
                       ],
@@ -156,16 +198,16 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
                           ),
                         ),
                         const SizedBox(height: 10),
-                        FadeSlideIn(
-                          delay: const Duration(milliseconds: 80),
-                          child: _StatusText(loop: _loop),
+                        const FadeSlideIn(
+                          delay: Duration(milliseconds: 80),
+                          child: _StatusText(),
                         ),
                         const SizedBox(height: 20),
                         FadeSlideIn(
                           delay: const Duration(milliseconds: 140),
                           child: _StatsCard(progress: progress),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 16),
                         FadeSlideIn(
                           delay: const Duration(milliseconds: 200),
                           child: _CategoryList(
@@ -178,21 +220,14 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
                   ),
                 ),
                 Container(
+                  color: context.tokens.surface,
                   padding: EdgeInsets.fromLTRB(20, 8, 20, bottom),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Color(0xFFFFFFFF), Color(0x00FFFFFF)],
-                      stops: [0.55, 1],
-                    ),
-                  ),
                   child: Semantics(
                     button: true,
                     label: AppStrings.stopScan,
                     excludeSemantics: true,
                     child: Material(
-                      color: AppColors.iconTile,
+                      color: context.tokens.iconTile,
                       borderRadius: BorderRadius.circular(16),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
@@ -204,7 +239,7 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
                             child: Text(
                               AppStrings.stopScan,
                               style: AppText.custom(
-                                  14, FontWeight.w500, AppColors.titleInk,
+                                  14, FontWeight.w500, context.tokens.textPrimary,
                                   lineHeight: 20),
                             ),
                           ),
@@ -222,44 +257,20 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
   }
 }
 
-class _Glows extends StatelessWidget {
-  const _Glows();
-
-  @override
-  Widget build(BuildContext context) {
-    Widget blob(Color color, double size) => Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color, color.withAlpha(0)],
-            ),
-          ),
-        );
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            right: -120,
-            top: -120,
-            child: blob(const Color(0x66E5E7EB), 400),
-          ),
-          Positioned(
-            left: -140,
-            top: 220,
-            child: blob(const Color(0xB3F3F4F6), 360),
-          ),
-          Positioned(
-            right: -40,
-            bottom: 60,
-            child: blob(const Color(0x33E5E7EB), 300),
-          ),
-        ],
-      ),
-    );
-  }
-}
+const _softShadow = [
+  BoxShadow(
+    color: Color(0x14676767),
+    blurRadius: 30,
+    spreadRadius: -4,
+    offset: Offset(0, 10),
+  ),
+  BoxShadow(
+    color: Color(0x0A1B1B1B),
+    blurRadius: 8,
+    spreadRadius: -2,
+    offset: Offset(0, 2),
+  ),
+];
 
 class _RoundButton extends StatelessWidget {
   const _RoundButton({
@@ -279,9 +290,9 @@ class _RoundButton extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       child: Material(
-        color: AppColors.surface,
-        shape: const CircleBorder(
-          side: BorderSide(color: Color(0x66D1D5DB)),
+        color: context.tokens.surface,
+        shape: CircleBorder(
+          side: BorderSide(color: context.tokens.borderSoft),
         ),
         elevation: 0.5,
         shadowColor: const Color(0x0D000000),
@@ -297,6 +308,7 @@ class _RoundButton extends StatelessWidget {
 
 // ───────────────────────── Buồng quét ─────────────────────────
 
+/// Quả cầu nước neon (theo canvas): nước dâng theo tiến độ quét, vòng RGB, vạch quét và quỹ đạo xoay.
 class _Chamber extends StatelessWidget {
   const _Chamber({
     required this.loop,
@@ -310,91 +322,53 @@ class _Chamber extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final numberStyle = AppText.custom(44, FontWeight.w700, Colors.white,
+        lineHeight: 48, letterSpacing: -1.1).copyWith(
+      shadows: const [Shadow(color: Color(0xAA38BDF8), blurRadius: 14)],
+    );
+    final unitStyle = AppText.custom(18, FontWeight.w600, Colors.white,
+        lineHeight: 24);
+    final labelStyle = AppText.custom(11, FontWeight.w600,
+        const Color(0xFF9FD8F5),
+        lineHeight: 14, letterSpacing: 1.1);
+
     return SizedBox(
       width: 240,
       height: 240,
       child: Stack(
         alignment: Alignment.center,
+        clipBehavior: Clip.none,
         children: [
-          RepaintBoundary(
-            child: AnimatedBuilder(
-              animation: loop,
-              builder: (context, _) => CustomPaint(
-                size: const Size(240, 240),
-                painter: _ChamberPainter(loop.value),
-              ),
-            ),
-          ),
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: fraction.clamp(0.0, 1.0)),
             duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOut,
-            builder: (context, v, _) => CustomPaint(
-              size: const Size(192, 192),
-              painter: _ArcPainter(v),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, __) => RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: loop,
+                builder: (_, __) => CustomPaint(
+                  size: const Size(240, 240),
+                  painter: _OrbPainter(t: loop.value, fraction: v),
+                ),
+              ),
             ),
           ),
-          Container(
-            width: 128,
-            height: 128,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0x4DD1D5DB)),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x2E111827),
-                  blurRadius: 36,
-                  spreadRadius: -6,
-                  offset: Offset(0, 12),
-                ),
-                BoxShadow(
-                  color: Color(0x0F111827),
-                  blurRadius: 10,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: const BoxDecoration(
-                    color: AppColors.iconTile,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Center(
-                    child: AppSvg(
-                      AppAssets.scanTarget,
-                      size: 14.67,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      '$percent',
-                      style: AppText.custom(
-                          44, FontWeight.w700, AppColors.titleInk,
-                          lineHeight: 48, letterSpacing: -1.1),
-                    ),
-                    Text(
-                      '%',
-                      style: AppText.custom(
-                          18, FontWeight.w600, AppColors.primary,
-                          lineHeight: 24),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text('$percent', style: numberStyle),
+                  Text('%', style: unitStyle),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(AppStrings.scanningStatus.toUpperCase(),
+                  style: labelStyle),
+            ],
           ),
         ],
       ),
@@ -402,293 +376,275 @@ class _Chamber extends StatelessWidget {
   }
 }
 
-class _Node {
-  const _Node(this.deg, this.size, this.color, {this.glow = 0});
+class _OrbPainter extends CustomPainter {
+  const _OrbPainter({required this.t, required this.fraction});
 
-  final double deg;
-  final double size;
-  final Color color;
-  final double glow;
-}
-
-class _ChamberPainter extends CustomPainter {
-  const _ChamberPainter(this.t);
-
-  /// 0..1 trong một chu kỳ 12s.
+  /// 0..1, lấy từ vòng lặp 12s (mọi nhịp chạy số nguyên vòng nên lặp liền mạch).
   final double t;
 
-  static const _outerNodes = [
-    _Node(-90, 10, Color(0xFF111827), glow: 8),
-    _Node(0, 8, Color(0xFFD1D5DB), glow: 6),
-    _Node(125, 6, Color(0xB34B5563)),
-    _Node(35, 6, Color(0xCC6B7280), glow: 4),
-    _Node(-150, 4, Color(0xFFD1D5DB)),
-  ];
-  static const _middleNodes = [
-    _Node(90, 10, Color(0xFF111827), glow: 8),
-    _Node(180, 6, Color(0xFFE5E7EB), glow: 6),
-    _Node(-55, 6, Color(0xCC111827)),
-    _Node(20, 4, Color(0xFF9CA3AF)),
-  ];
-  static const _dust = [
-    (Offset(0.12, 0.30), 2.0, Color(0xFF9CA3AF)),
-    (Offset(0.82, 0.10), 3.0, Color(0xFF6B7280)),
-    (Offset(0.88, 0.78), 2.0, Color(0xFF9CA3AF)),
-    (Offset(0.28, 0.86), 3.0, Color(0xFF111827)),
-    (Offset(0.62, 0.92), 2.0, Color(0xFFD1D5DB)),
-  ];
+  /// Tiến độ quét 0..1: càng cao thì nước càng dâng.
+  final double fraction;
 
-  void _node(Canvas canvas, Offset c, double r, double angle, _Node n) {
-    final a = (n.deg * math.pi / 180) + angle;
-    final p = c + Offset(math.cos(a), math.sin(a)) * r;
-    if (n.glow > 0) {
-      canvas.drawCircle(
-        p,
-        n.size / 2 + n.glow / 2,
-        Paint()
-          ..color = n.color.withAlpha(110)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, n.glow / 2),
-      );
-    }
-    canvas.drawCircle(p, n.size / 2, Paint()..color = n.color);
-  }
+  static const _sphereR = 90.0;
+  static const _ringR = 104.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final c = size.center(Offset.zero);
-    final rect = Offset.zero & size;
-    final tau = math.pi * 2;
+    final f = fraction.clamp(0.0, 1.0);
+    final hue = (t * 360) % 360;
+    final phase = t * math.pi * 2;
+    Color rgb(double h, [double a = 1]) =>
+        HSVColor.fromAHSV(a, h % 360, 0.85, 1).toColor();
 
-    // Quầng ngoài.
+    // Quầng sáng nền đổi màu theo hue.
     canvas.drawCircle(
       c,
       120,
       Paint()
+        ..shader = RadialGradient(colors: [rgb(hue, 0.28), rgb(hue, 0)])
+            .createShader(Rect.fromCircle(center: c, radius: 120)),
+    );
+
+    // Quỹ đạo chấm xoay chậm, có một hạt sáng.
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.rotate(phase);
+    final dotted = Paint()..color = const Color(0x4D7DD3FC);
+    for (var i = 0; i < 48; i++) {
+      final a = i * math.pi * 2 / 48;
+      canvas.drawCircle(Offset(math.cos(a), math.sin(a)) * 118, 0.9, dotted);
+    }
+    canvas.drawCircle(const Offset(0, -118), 2.6, Paint()..color = rgb(hue));
+    canvas.restore();
+
+    // Vòng tiến độ: đường ray, phần đã quét (cầu vồng, có glow) và đầu sáng.
+    final ringRect = Rect.fromCircle(center: c, radius: _ringR);
+    canvas.drawCircle(
+      c,
+      _ringR,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10
+        ..color = const Color(0x2294C5E6),
+    );
+    if (f > 0) {
+      final sweep = math.pi * 2 * f;
+      final shader = SweepGradient(
+        startAngle: -math.pi / 2,
+        endAngle: math.pi * 3 / 2,
+        colors: [rgb(hue), rgb(hue + 120), rgb(hue + 240), rgb(hue)],
+      ).createShader(ringRect);
+      canvas.drawArc(
+        ringRect,
+        -math.pi / 2,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 14
+          ..strokeCap = StrokeCap.round
+          ..shader = shader
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+      );
+      canvas.drawArc(
+        ringRect,
+        -math.pi / 2,
+        sweep,
+        false,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 10
+          ..strokeCap = StrokeCap.round
+          ..shader = shader,
+      );
+      final a = -math.pi / 2 + sweep;
+      final knob = c + Offset(math.cos(a), math.sin(a)) * _ringR;
+      canvas.drawCircle(knob, 7,
+          Paint()..color = const Color(0xFFE0FAFF)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+      canvas.drawCircle(knob, 4.5, Paint()..color = const Color(0xFFFFFFFF));
+    }
+
+    // Quả cầu thủy tinh.
+    final sphere = Rect.fromCircle(center: c, radius: _sphereR);
+    canvas.drawCircle(
+      c,
+      _sphereR,
+      Paint()
+        ..shader = const RadialGradient(
+          center: Alignment(-0.3, -0.4),
+          radius: 0.9,
+          colors: [Color(0xD917406F), Color(0xF206142B), Color(0xFF02060F)],
+          stops: [0, 0.7, 1],
+        ).createShader(sphere),
+    );
+
+    // Nước trong quả cầu, mực nước theo tiến độ.
+    final level = c.dy + _sphereR - 2 * _sphereR * (0.2 + 0.8 * f);
+    Path wave(double ph, double amp, double yOff, {required bool fill}) {
+      final y0 = level + yOff;
+      final left = c.dx - _sphereR - 10;
+      final right = c.dx + _sphereR + 10;
+      final p = Path()
+        ..moveTo(left, y0 + math.sin((left - c.dx) / 28 + ph) * amp);
+      for (var x = left + 4; x <= right; x += 4) {
+        p.lineTo(x, y0 + math.sin((x - c.dx) / 28 + ph) * amp);
+      }
+      if (fill) {
+        p
+          ..lineTo(right, c.dy + _sphereR + 10)
+          ..lineTo(left, c.dy + _sphereR + 10)
+          ..close();
+      }
+      return p;
+    }
+
+    canvas.save();
+    canvas.clipPath(Path()..addOval(sphere));
+    canvas.drawPath(wave(phase + 1.6, 5, 8, fill: true),
+        Paint()..color = const Color(0x8C0284C7));
+    canvas.drawPath(
+      wave(phase, 6, 0, fill: true),
+      Paint()
         ..shader = const LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [AppColors.scanHaloTop, AppColors.scanHaloBottom],
-        ).createShader(rect),
+          colors: [Color(0xFF38BDF8), Color(0xFF0284C7), Color(0xFF03325C)],
+        ).createShader(sphere),
     );
-
-    // Hạt bụi tĩnh.
-    for (final (pos, r, color) in _dust) {
-      canvas.drawCircle(Offset(pos.dx * size.width, pos.dy * size.height), r,
-          Paint()..color = color);
-    }
-
-    // Vòng ngoài quay thuận.
-    canvas.drawCircle(
-      c,
-      114,
+    canvas.drawPath(
+      wave(phase, 6, 0, fill: false),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0x66D1D5DB),
+        ..strokeWidth = 2
+        ..color = const Color(0xD9E0FAFF),
     );
-    for (final n in _outerNodes) {
-      _node(canvas, c, 114, t * tau, n);
-    }
 
-    // Vòng giữa nét đứt quay ngược.
-    final dashRing = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = const Color(0x40111827);
-    const dashCount = 64;
-    final rotate = -t * tau;
-    for (var i = 0; i < dashCount; i++) {
-      final a0 = rotate + i * tau / dashCount;
-      canvas.drawArc(
-        Rect.fromCircle(center: c, radius: 100),
-        a0,
-        tau / dashCount * 0.5,
-        false,
-        dashRing,
+    // Bọt nổi lên (2 nhịp mỗi vòng lặp).
+    for (var i = 0; i < 4; i++) {
+      final p = (t * 2 + i * 0.27) % 1.0;
+      final bx = c.dx + math.sin(i * 2.1) * 50;
+      final by = c.dy + _sphereR - 20 - p * 150;
+      canvas.drawCircle(
+        Offset(bx, by),
+        2.5,
+        Paint()..color = Color.fromRGBO(224, 247, 255, 0.7 * math.sin(math.pi * p)),
       );
     }
-    for (final n in _middleNodes) {
-      _node(canvas, c, 100, rotate, n);
+
+    // Vạch quét RGB chạy lên xuống qua quả cầu.
+    final beamY = c.dy + math.sin(phase) * 70;
+    final beamRect = Rect.fromLTWH(c.dx - 100, beamY - 14, 200, 28);
+    canvas.drawRect(
+      beamRect,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [rgb(hue, 0), rgb(hue, 0.7), rgb(hue, 0)],
+        ).createShader(beamRect),
+    );
+    canvas.restore();
+
+    // Vòng nét đứt RGB xoay ngược chiều bên trong quả cầu.
+    canvas.save();
+    canvas.translate(c.dx, c.dy);
+    canvas.rotate(-phase);
+    final dash = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..color = rgb(hue, 0.6);
+    const segments = 24;
+    for (var i = 0; i < segments; i += 2) {
+      final a0 = i * 2 * math.pi / segments;
+      final a1 = (i + 1) * 2 * math.pi / segments;
+      canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: 78), a0, a1 - a0, false, dash);
     }
+    canvas.restore();
 
-    // Tia radar quét.
-    final sweepRect = Rect.fromCircle(center: c, radius: 92);
+    // Viền quả cầu đổi màu theo hue.
     canvas.drawCircle(
       c,
-      92,
-      Paint()
-        ..shader = SweepGradient(
-          colors: const [
-            Color(0x00111827),
-            Color(0x00111827),
-            Color(0x0D111827),
-            Color(0x47111827),
-          ],
-          stops: const [0, 0.75, 0.847, 1],
-          transform: GradientRotation(t * tau * 4),
-        ).createShader(sweepRect),
-    );
-
-    // Vòng trong cùng.
-    canvas.drawCircle(
-      c,
-      88,
+      _sphereR,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..color = const Color(0x26111827),
+        ..strokeWidth = 1.5
+        ..color = rgb(hue, 0.5),
     );
+
+    // Phản quang kính.
+    canvas.save();
+    canvas.translate(c.dx - 30, c.dy - 42);
+    canvas.rotate(-0.5);
+    final gloss = Rect.fromCenter(center: Offset.zero, width: 84, height: 40);
+    canvas.drawOval(
+      gloss,
+      Paint()
+        ..shader = const RadialGradient(
+          colors: [Color(0x8CFFFFFF), Color(0x00FFFFFF)],
+        ).createShader(gloss),
+    );
+    canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_ChamberPainter old) => old.t != t;
+  bool shouldRepaint(_OrbPainter old) =>
+      old.t != t || old.fraction != fraction;
 }
-
-class _ArcPainter extends CustomPainter {
-  const _ArcPainter(this.fraction);
-
-  final double fraction;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 8.0;
-    final rect = (Offset.zero & size).deflate(stroke / 2);
-    canvas.drawArc(
-      rect,
-      0,
-      math.pi * 2,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..color = const Color(0x8CE5E7EB),
-    );
-    if (fraction <= 0) return;
-    canvas.drawArc(
-      rect,
-      -math.pi / 2,
-      math.pi * 2 * fraction,
-      false,
-      Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
-        ..strokeCap = StrokeCap.round
-        ..shader = const SweepGradient(
-          startAngle: -math.pi / 2,
-          endAngle: math.pi * 1.5,
-          colors: [Color(0xFF6B7280), Color(0xFF111827)],
-          transform: GradientRotation(-math.pi / 2),
-        ).createShader(Offset.zero & size),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_ArcPainter old) => old.fraction != fraction;
-}
-
-// ───────────────────────── Trạng thái, thống kê, danh mục ─────────────────────────
 
 class _StatusText extends StatelessWidget {
-  const _StatusText({required this.loop});
+  const _StatusText();
 
-  final Animation<double> loop;
+  /// Chấm xanh trạng thái đang quét, theo Figma (#009DE5).
+  static const _pulse = Color(0xFF009DE5);
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: loop,
-      builder: (context, _) {
-        // Nhịp xung 1.5s, dấu chấm đổi mỗi 0.4s.
-        final pulse = (loop.value * 8) % 1;
-        final dots = (loop.value * 30).floor() % 3 + 1;
-        return Column(
+    final t = context.tokens;
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 10,
-                  height: 10,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    alignment: Alignment.center,
-                    children: [
-                      Opacity(
-                        opacity: (1 - pulse) * 0.75,
-                        child: Transform.scale(
-                          scale: 1 + pulse * 1.6,
-                          child: const _Dot(10, AppColors.primary),
-                        ),
-                      ),
-                      const _Dot(10, AppColors.primary),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppStrings.scanningTitle,
-                  style: AppText.custom(18, FontWeight.w600, AppColors.titleInk,
-                      lineHeight: 24, letterSpacing: -0.45),
-                ),
-              ],
+            Container(
+              width: 10,
+              height: 10,
+              decoration: const BoxDecoration(
+                color: _pulse,
+                shape: BoxShape.circle,
+              ),
             ),
-            const SizedBox(height: 2),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  AppStrings.scanningSubtitle,
-                  style: AppText.custom(
-                      14, FontWeight.w400, AppColors.textSecondary,
-                      lineHeight: 20),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 20,
-                  child: Text(
-                    '.' * dots,
-                    style: AppText.custom(
-                        14, FontWeight.w600, AppColors.primary,
-                        lineHeight: 20, letterSpacing: 1.4),
-                  ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            Text(
+              AppStrings.scanningTitle,
+              style: AppText.custom(18, FontWeight.w600, t.textPrimary,
+                  lineHeight: 24, letterSpacing: -0.45),
             ),
           ],
-        );
-      },
+        ),
+        const SizedBox(height: 2),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppStrings.scanningSubtitle,
+              style: AppText.custom(14, FontWeight.w400, t.textSecondary,
+                  lineHeight: 20),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              '...',
+              style: AppText.custom(14, FontWeight.w600, t.textSecondary,
+                  lineHeight: 20, letterSpacing: 1.4),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
-
-class _Dot extends StatelessWidget {
-  const _Dot(this.size, this.color);
-
-  final double size;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      );
-}
-
-const _softShadow = [
-  BoxShadow(
-    color: Color(0x14111827),
-    blurRadius: 30,
-    spreadRadius: -4,
-    offset: Offset(0, 10),
-  ),
-  BoxShadow(
-    color: Color(0x0A191B27),
-    blurRadius: 8,
-    spreadRadius: -2,
-    offset: Offset(0, 2),
-  ),
-];
 
 class _StatsCard extends StatelessWidget {
   const _StatsCard({required this.progress});
@@ -697,6 +653,7 @@ class _StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     Widget col(String value, String label,
         {bool accent = false, bool first = false}) {
       return Expanded(
@@ -705,16 +662,19 @@ class _StatsCard extends StatelessWidget {
           decoration: BoxDecoration(
             border: first
                 ? null
-                : const Border(left: BorderSide(color: Color(0x4DD1D5DB))),
+                : Border(left: BorderSide(color: t.borderSoft)),
           ),
           child: Column(
             children: [
               Text(
                 value,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppText.custom(
                     18,
                     accent ? FontWeight.w700 : FontWeight.w600,
-                    accent ? AppColors.primary : AppColors.titleInk,
+                    accent ? t.textSecondary : t.textPrimary,
                     lineHeight: 24,
                     letterSpacing: -0.45),
               ),
@@ -722,8 +682,7 @@ class _StatsCard extends StatelessWidget {
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: AppText.custom(
-                    11, FontWeight.w600, AppColors.textSecondary,
+                style: AppText.custom(11, FontWeight.w600, t.textSecondary,
                     lineHeight: 14, letterSpacing: 0.33),
               ),
             ],
@@ -733,11 +692,11 @@ class _StatsCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 15),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: t.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x66D1D5DB)),
+        border: Border.all(color: t.borderSoft),
         boxShadow: _softShadow,
       ),
       child: IntrinsicHeight(
@@ -773,14 +732,15 @@ class _CategoryList extends StatelessWidget {
             children: [
               Text(
                 AppStrings.categoriesExamined,
-                style: AppText.custom(14, FontWeight.w600, AppColors.titleInk,
+                style: AppText.custom(14, FontWeight.w600, context.tokens.textPrimary,
                     lineHeight: 20),
               ),
               Flexible(
                 child: Text(
                   AppStrings.provisionalFindings,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.custom(11, FontWeight.w600, AppColors.textBlue,
+                  style: AppText.custom(11, FontWeight.w600,
+                      context.tokens.textMuted,
                       lineHeight: 14, letterSpacing: 0.33),
                 ),
               ),
@@ -790,18 +750,21 @@ class _CategoryList extends StatelessWidget {
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: context.tokens.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0x66D1D5DB)),
+            border: Border.all(color: context.tokens.borderSoft),
             boxShadow: _softShadow,
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
               for (final (i, c) in ScanCategory.values.indexed) ...[
-                if (i > 0)
-                  const Divider(
-                      height: 1, thickness: 1, color: Color(0x33D1D5DB)),
+                if (i > 0 && i != 1)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: context.tokens.divider,
+                  ),
                 _ScanRow(
                   category: c,
                   status: progress.statuses[c] ?? CategoryStatus.scanning,
@@ -829,6 +792,7 @@ class _ScanRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     return Padding(
       padding: const EdgeInsets.all(12),
       child: Row(
@@ -837,12 +801,11 @@ class _ScanRow extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: AppColors.iconTile,
+              color: t.iconTile,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child:
-                  AppSvg(category.icon, size: 16.67, color: AppColors.accent),
+              child: AppSvg(category.icon, size: 17, color: t.textPrimary),
             ),
           ),
           const SizedBox(width: 12),
@@ -852,15 +815,13 @@ class _ScanRow extends StatelessWidget {
               children: [
                 Text(
                   category.label,
-                  style: AppText.custom(14, FontWeight.w500, AppColors.titleInk,
+                  style: AppText.custom(14, FontWeight.w500, t.textPrimary,
                       lineHeight: 20),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   category.scanningHint(threshold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.custom(
-                      11, FontWeight.w600, AppColors.textSecondary,
+                  style: AppText.custom(11, FontWeight.w600, t.textSecondary,
                       lineHeight: 14, letterSpacing: 0.33),
                 ),
               ],
@@ -881,38 +842,34 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (text, fg, border, bg) = switch (status) {
-      CategoryStatus.done => (
-          AppStrings.doneStatus,
-          AppColors.positive,
-          AppColors.positiveSoft,
-          const Color(0x1A65CDA9),
-        ),
+    final t = context.tokens;
+    final (text, fg, border) = switch (status) {
+      CategoryStatus.done => (AppStrings.doneStatus, t.success, t.textMuted),
       CategoryStatus.pending => (
           AppStrings.pendingStatus,
-          AppColors.textMuted,
-          const Color(0x66D1D5DB),
-          Colors.transparent,
+          t.textCaption,
+          t.borderSoft,
         ),
       CategoryStatus.scanning => (
           AppStrings.scanningStatus,
-          AppColors.titleInk,
-          AppColors.titleInk,
-          Colors.transparent,
+          t.textPrimary,
+          t.textPrimary,
         ),
     };
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+    return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 5),
       decoration: BoxDecoration(
-        color: bg,
         borderRadius: BorderRadius.circular(9999),
         border: Border.all(color: border),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _Dot(6, fg),
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: fg, shape: BoxShape.circle),
+          ),
           const SizedBox(width: 6),
           Text(
             text,

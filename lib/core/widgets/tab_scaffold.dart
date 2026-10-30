@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../router/app_routes.dart';
-import '../theme/app_colors.dart';
 import 'app_bottom_nav.dart';
+import '../theme/app_tokens.dart';
 
 /// Khung 4 tab chính. Tab Clean mở luồng quét; ba tab còn lại chuyển route.
 class TabScaffold extends StatelessWidget {
@@ -21,7 +21,7 @@ class TabScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
+      backgroundColor: context.tokens.background,
       body: body,
       bottomNavigationBar: AppBottomNav(
         current: current,
@@ -32,8 +32,8 @@ class TabScaffold extends StatelessWidget {
               context.go(AppRoutes.home);
             case AppTab.scan:
               onScan();
-            case AppTab.storage:
-              context.go(AppRoutes.storage);
+            case AppTab.activity:
+              context.go(AppRoutes.activity);
             case AppTab.settings:
               context.go(AppRoutes.settings);
           }

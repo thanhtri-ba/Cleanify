@@ -2,13 +2,12 @@ abstract final class AppRoutes {
   static const onboarding = '/onboarding';
   static const onboarding2 = '/onboarding/2';
   static const onboarding3 = '/onboarding/3';
-  static const signIn = '/sign-in';
-  static const createAccount = '/create-account';
-  static const forgotPassword = '/forgot-password';
-  static const verifyEmail = '/verify-email';
   static const fileAccess = '/file-access';
   static const home = '/home';
   static const storage = '/storage';
+  static const activity = '/activity';
+  static const cleanupHistory = '/activity/history';
+  static String cleanupSessionPath(int id) => '/activity/history/$id';
   static const settings = '/settings';
   static const scan = '/scan';
   static const scanComplete = '/scan/complete';
@@ -23,16 +22,17 @@ abstract final class AppRoutes {
   static const notificationStorage = '/notifications/storage';
   static const notificationReminder = '/notifications/reminder';
   static const duplicates = '/duplicates';
+  static const groupReview = '/duplicates/group';
   static const largeFiles = '/large-files';
+  static const fileSearch = '/storage/search';
   static const photoLibrary = '/photo-library';
   static const appManager = '/app-manager';
   static const storageAnalysis = '/storage-analysis';
   static const privacyPolicy = '/privacy-policy';
-
-  static const authRoutes = {
-    signIn,
-    createAccount,
-    forgotPassword,
-    verifyEmail
-  };
+  static const appearanceSettings = '/settings/appearance';
+  static const scanPreferences = '/settings/scan-preferences';
+  static const about = '/settings/about';
+  static const help = '/help';
+  static const photoLimited = '/file-access/limited';
+  static const photoDenied = '/file-access/denied';
 }

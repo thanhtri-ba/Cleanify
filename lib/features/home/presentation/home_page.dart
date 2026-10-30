@@ -7,9 +7,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/app_svg.dart';
@@ -35,8 +35,11 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final storage = ref.watch(deviceStorageProvider);
     final breakdown = ref.watch(storageBreakdownProvider);
-    final scan = ref.watch(scanControllerProvider);
-    final scanning = scan.phase == ScanPhase.running;
+    // select: chỉ rebuild khi đúng giá trị này đổi, không rebuild theo từng tiến trình quét.
+    final scanning = ref.watch(
+        scanControllerProvider.select((s) => s.phase == ScanPhase.running));
+    final result =
+        ref.watch(scanControllerProvider.select((s) => s.outcome?.result));
     void scanNow() {
       if (!scanning) startScanFlow(context, ref);
     }
@@ -46,7 +49,6 @@ class HomePage extends ConsumerWidget {
       current: AppTab.home,
       onScan: scanNow,
       body: SingleChildScrollView(
-        // Chừa chỗ cho thanh trạng thái vì Home không còn header.
         padding: EdgeInsets.fromLTRB(
           20,
           MediaQuery.paddingOf(context).top + 20,
@@ -58,68 +60,39 @@ class HomePage extends ConsumerWidget {
           children: [
             FadeSlideIn(
               delay: const Duration(milliseconds: 60),
+              child: _ReclaimCard(
+                result: result,
+                scanning: scanning,
+                storage: storage.valueOrNull,
+                onScan: scanNow,
+                onReview: () => context.push(AppRoutes.duplicates),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 120),
               child: _StorageCard(
                 storage: storage,
                 breakdown: breakdown,
                 onRetry: () => ref.invalidate(deviceStorageProvider),
               ),
             ),
-            const SizedBox(height: 12),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 120),
-              child: _ScanButton(scanning: scanning, onTap: scanNow),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             FadeSlideIn(
               delay: const Duration(milliseconds: 180),
-              child: _NotificationsRow(
-                  onTap: () => context.push(AppRoutes.notifications)),
+              child: _ShortcutRow(
+                onLargeFiles: () => context.push(AppRoutes.largeFiles),
+                onAppManager: () => context.push(AppRoutes.appManager),
+                onNotifications: () => context.push(AppRoutes.notifications),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             FadeSlideIn(
-              delay: const Duration(milliseconds: 240),
-              child: _DuplicatesCard(
-                result: scan.outcome?.result,
+              delay: const Duration(milliseconds: 150),
+              child: _DuplicatesSection(
+                result: result,
                 onReview: () => context.push(AppRoutes.duplicates),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 300),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: _LargeFilesCard(
-                      threshold: ref.watch(scanConfigProvider).largeVideoBytes,
-                      onTap: () => context.push(AppRoutes.largeFiles),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                      child: _AppManagerCard(
-                          onTap: () => context.push(AppRoutes.appManager))),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 360),
-              child: _WideLinkCard(
-                onTap: () => context.push(AppRoutes.photoLibrary),
-                title: AppStrings.photoLibrary,
-                subtitle: AppStrings.photoLibrarySubtitle,
-                icon: AppAssets.image,
-              ),
-            ),
-            const SizedBox(height: 12),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 420),
-              child: _WideLinkCard(
-                onTap: () => context.push(AppRoutes.storageAnalysis),
-                title: AppStrings.storageAnalysis,
-                subtitle: AppStrings.deepAudit,
-                icon: AppAssets.barChart,
+                onLargeFiles: () => context.push(AppRoutes.largeFiles),
               ),
             ),
           ],
@@ -130,23 +103,6 @@ class HomePage extends ConsumerWidget {
 }
 
 // ───────────────────────── Storage card ─────────────────────────
-
-BoxDecoration _cardDecoration(double radius, {bool shadow = true}) =>
-    BoxDecoration(
-      color: AppColors.surface,
-      borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: AppColors.borderNeutral),
-      boxShadow: shadow
-          ? const [
-              BoxShadow(
-                color: Color(0x0A111827),
-                blurRadius: 24,
-                spreadRadius: -8,
-                offset: Offset(0, 10),
-              ),
-            ]
-          : null,
-    );
 
 class _StorageCard extends StatelessWidget {
   const _StorageCard({
@@ -164,9 +120,9 @@ class _StorageCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
       decoration: BoxDecoration(
-        gradient: AppColors.heroGradient,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppColors.heroBorder),
+        color: context.tokens.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: context.tokens.border),
         boxShadow: const [
           BoxShadow(
             color: Color(0x2E111827),
@@ -185,13 +141,13 @@ class _StorageCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               AppStrings.storageUnavailable,
-              style: AppText.custom(12, FontWeight.w400, AppColors.onHeroMuted),
+              style: AppText.custom(12, FontWeight.w400, context.tokens.textMuted),
             ),
             TextButton(
               onPressed: onRetry,
               child: Text(
                 AppStrings.retry,
-                style: AppText.custom(13, FontWeight.w600, AppColors.onHero,
+                style: AppText.custom(13, FontWeight.w600, context.tokens.textPrimary,
                     lineHeight: 20),
               ),
             ),
@@ -203,11 +159,14 @@ class _StorageCard extends StatelessWidget {
 }
 
 class _Segment {
-  const _Segment(this.label, this.bytes, this.color);
+  const _Segment(this.label, this.bytes, this.color, {this.gradient});
 
   final String label;
   final int bytes;
   final Color color;
+
+  /// Khi có, đoạn này tô dải nhiều màu thay vì một màu.
+  final Gradient? gradient;
 }
 
 class _StorageData extends StatelessWidget {
@@ -237,16 +196,26 @@ class _StorageData extends StatelessWidget {
           ]
         : [
             _Segment(
-                AppStrings.legendUsed, s?.usedBytes ?? 0, AppColors.onHero),
+              AppStrings.legendUsed,
+              s?.usedBytes ?? 0,
+              AppColors.breakdownPhotos,
+              gradient: const LinearGradient(
+                colors: [
+                  AppColors.breakdownPhotos,
+                  AppColors.breakdownScreenshots,
+                  AppColors.breakdownVideos,
+                ],
+              ),
+            ),
             _Segment(AppStrings.legendFree, s?.freeBytes ?? 0,
-                AppColors.heroSegmentFree),
+                context.tokens.chip),
           ];
 
     final labelStyle = AppText.custom(
-        11, FontWeight.w600, AppColors.onHeroMuted,
+        11, FontWeight.w600, context.tokens.textMuted,
         lineHeight: 14);
     final smallMuted = AppText.custom(
-        11, FontWeight.w600, AppColors.onHeroMuted,
+        11, FontWeight.w600, context.tokens.textMuted,
         lineHeight: 14);
 
     return Column(
@@ -263,8 +232,8 @@ class _StorageData extends StatelessWidget {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.onHero,
+                        decoration: BoxDecoration(
+                          color: context.tokens.textPrimary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -285,14 +254,14 @@ class _StorageData extends StatelessWidget {
                           pick: (b) => splitBytes(b).value,
                           fallback: '—',
                           style: AppText.custom(
-                              50, FontWeight.w700, AppColors.onHero,
+                              50, FontWeight.w700, context.tokens.textPrimary,
                               lineHeight: 52, letterSpacing: -1.1),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           used?.unit ?? 'GB',
                           style: AppText.custom(
-                              20, FontWeight.w600, AppColors.onHeroSecondary,
+                              20, FontWeight.w600, context.tokens.textSecondary,
                               lineHeight: 26, letterSpacing: -0.3),
                         ),
                         if (s != null) ...[
@@ -300,7 +269,7 @@ class _StorageData extends StatelessWidget {
                           Text(
                             '/ ${formatBytes(s.totalBytes)}',
                             style: AppText.custom(
-                                14, FontWeight.w400, AppColors.onHeroFaint,
+                                14, FontWeight.w400, context.tokens.textMuted,
                                 lineHeight: 20),
                           ),
                         ],
@@ -319,7 +288,11 @@ class _StorageData extends StatelessWidget {
                 children: [
                   CustomPaint(
                     size: const Size(70, 70),
-                    painter: _GaugePainter(fraction),
+                    painter: _GaugePainter(
+                      fraction,
+                      track: context.tokens.chip,
+                      ink: context.tokens.textPrimary,
+                    ),
                   ),
                   Column(
                     mainAxisSize: MainAxisSize.min,
@@ -329,7 +302,7 @@ class _StorageData extends StatelessWidget {
                         pick: (v) => '$v%',
                         fallback: '—',
                         style: AppText.custom(
-                            14, FontWeight.w700, AppColors.onHero,
+                            14, FontWeight.w700, context.tokens.textPrimary,
                             lineHeight: 14),
                       ),
                       const SizedBox(height: 2),
@@ -347,20 +320,20 @@ class _StorageData extends StatelessWidget {
           children: [
             Text(
               AppStrings.storageDistribution,
-              style: AppText.custom(14, FontWeight.w500, AppColors.onHero,
+              style: AppText.custom(14, FontWeight.w500, context.tokens.textPrimary,
                   lineHeight: 20),
             ),
             if (s != null)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.heroSurface,
+                  color: context.tokens.chip,
                   borderRadius: BorderRadius.circular(9999),
                 ),
                 child: Text(
                   AppStrings.freeHeadroom(formatBytes(s.freeBytes)),
                   style: AppText.custom(
-                      11, FontWeight.w500, AppColors.onHeroSecondary,
+                      11, FontWeight.w500, context.tokens.textSecondary,
                       lineHeight: 14),
                 ),
               ),
@@ -371,7 +344,7 @@ class _StorageData extends StatelessWidget {
           segments: segments,
           total: b?.totalBytes ?? s?.totalBytes ?? 0,
           hasData: s != null,
-          onDark: true,
+          onDark: false,
         ),
       ],
     );
@@ -380,36 +353,39 @@ class _StorageData extends StatelessWidget {
 
 /// Vòng đo dung lượng: nền #ECECFE, phần đã dùng #443E9D, bắt đầu từ đỉnh.
 class _GaugePainter extends CustomPainter {
-  const _GaugePainter(this.fraction);
+  const _GaugePainter(this.fraction, {required this.track, required this.ink});
 
   final double fraction;
+  final Color track;
+  final Color ink;
 
   @override
   void paint(Canvas canvas, Size size) {
     const stroke = 6.0;
     final rect = Offset.zero & size;
     final arc = rect.deflate(stroke / 2);
-    final track = Paint()
+    final trackPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
-      ..color = AppColors.heroTrack;
-    canvas.drawArc(arc, 0, math.pi * 2, false, track);
+      ..color = track;
+    canvas.drawArc(arc, 0, math.pi * 2, false, trackPaint);
     if (fraction <= 0) return;
     final progress = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..shader = const SweepGradient(
+      ..shader = SweepGradient(
         startAngle: -math.pi / 2,
         endAngle: math.pi * 1.5,
-        colors: [Color(0xFF7FA8FF), Color(0xFFFFFFFF)],
+        colors: [ink, ink],
       ).createShader(arc);
     canvas.drawArc(arc, -math.pi / 2, math.pi * 2 * fraction.clamp(0.0, 1.0),
         false, progress);
   }
 
   @override
-  bool shouldRepaint(_GaugePainter old) => old.fraction != fraction;
+  bool shouldRepaint(_GaugePainter old) =>
+      old.fraction != fraction || old.track != track || old.ink != ink;
 }
 
 /// Thanh phân bổ + chú giải. Chạm một mục để làm nổi đoạn tương ứng, chạm lại
@@ -448,7 +424,7 @@ class _DistributionState extends State<_Distribution> {
         Container(
           height: 10,
           decoration: BoxDecoration(
-            color: widget.onDark ? AppColors.heroTrack : AppColors.chip,
+            color: widget.onDark ? context.tokens.chip : context.tokens.chip,
             borderRadius: BorderRadius.circular(9999),
           ),
           clipBehavior: Clip.antiAlias,
@@ -469,7 +445,10 @@ class _DistributionState extends State<_Distribution> {
                             : math.max(0.0,
                                 c.maxWidth * v * seg.bytes / widget.total - 2),
                         margin: const EdgeInsets.only(right: 2),
-                        color: seg.color,
+                        decoration: BoxDecoration(
+                          color: seg.gradient == null ? seg.color : null,
+                          gradient: seg.gradient,
+                        ),
                       ),
                     ),
                 ],
@@ -495,8 +474,8 @@ class _DistributionState extends State<_Distribution> {
                       decoration: BoxDecoration(
                         color: _selected == i
                             ? (widget.onDark
-                                ? AppColors.heroSurface
-                                : AppColors.chip)
+                                ? context.tokens.chip
+                                : context.tokens.chip)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -546,7 +525,7 @@ class _Legend extends StatelessWidget {
             Text(
               label,
               style: AppText.custom(11, FontWeight.w600,
-                  onDark ? AppColors.onHeroMuted : AppColors.textBlue,
+                  onDark ? context.tokens.textMuted : context.tokens.textMuted,
                   lineHeight: 14),
             ),
           ],
@@ -555,7 +534,7 @@ class _Legend extends StatelessWidget {
         Text(
           value,
           style: AppText.custom(12, FontWeight.w600,
-              onDark ? AppColors.onHero : AppColors.titleInk,
+              onDark ? context.tokens.textPrimary : context.tokens.textPrimary,
               lineHeight: 16),
         ),
       ],
@@ -595,319 +574,250 @@ class _CountText extends StatelessWidget {
 
 // ───────────────────────── Scan button & notifications ─────────────────────────
 
-class _ScanButton extends StatefulWidget {
-  const _ScanButton({required this.scanning, required this.onTap});
+/// Thẻ vuông của hàng hai cột: icon + phụ kiện, tiêu đề lớn, link dưới đáy.
+/// Khối ảnh trùng dưới thẻ dung lượng: thumbnail nhóm lớn nhất và từng loại có thể dọn.
+class _DuplicatesSection extends StatelessWidget {
+  const _DuplicatesSection({
+    required this.result,
+    required this.onReview,
+    required this.onLargeFiles,
+  });
 
-  final bool scanning;
-  final VoidCallback onTap;
+  final ScanResult? result;
+  final VoidCallback onReview;
+  final VoidCallback onLargeFiles;
 
-  @override
-  State<_ScanButton> createState() => _ScanButtonState();
-}
+  static int _removable(ScanResult r, ScanCategory c) {
+    if (c == ScanCategory.duplicates) {
+      return r.duplicateGroups.fold(0, (s, g) => s + g.removable.length);
+    }
+    if (c == ScanCategory.similar) {
+      return r.similarGroups.fold(0, (s, g) => s + g.removable.length);
+    }
+    return r.count(c);
+  }
 
-class _ScanButtonState extends State<_ScanButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _c = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 4200),
-  );
+  static VoidCallback? _onTapFor(
+      ScanCategory c, VoidCallback onReview, VoidCallback onLargeFiles) {
+    if (c == ScanCategory.duplicates || c == ScanCategory.similar) {
+      return onReview;
+    }
+    if (c == ScanCategory.largeVideos) return onLargeFiles;
+    return null;
+  }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (reduce) {
-      _c.stop();
-    } else if (!_c.isAnimating) {
-      _c.repeat();
+  static IconData _iconFor(ScanCategory c) {
+    switch (c) {
+      case ScanCategory.duplicates:
+        return Icons.copy_all_rounded;
+      case ScanCategory.similar:
+        return Icons.auto_awesome_motion_outlined;
+      case ScanCategory.largeVideos:
+        return Icons.movie_outlined;
+      case ScanCategory.screenshots:
+        return Icons.screenshot_outlined;
+    }
+  }
+
+  static String _labelFor(ScanCategory c) {
+    switch (c) {
+      case ScanCategory.duplicates:
+        return AppStrings.duplicatePhotos;
+      case ScanCategory.similar:
+        return AppStrings.similarPhotos;
+      case ScanCategory.largeVideos:
+        return AppStrings.largeVideos;
+      case ScanCategory.screenshots:
+        return AppStrings.screenshots;
     }
   }
 
   @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        PrimaryButton(
-          label: AppStrings.scanForJunk,
-          height: 58,
-          radius: 9999,
-          isLoading: widget.scanning,
-          gradient: AppColors.ctaGradient,
-          leading:
-              const AppSvg(AppAssets.scanTarget, size: 18, color: Colors.white),
-          labelStyle: AppText.custom(14, FontWeight.w600, Colors.white,
-              lineHeight: 18, letterSpacing: 0.14),
-          shadows: const [
-            BoxShadow(
-              color: Color(0x59111827),
-              blurRadius: 12,
-              offset: Offset(0, 8),
-            ),
-          ],
-          onPressed: widget.onTap,
-        ),
-        if (!widget.scanning)
-          Positioned.fill(
-            child: IgnorePointer(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(9999),
-                child: AnimatedBuilder(
-                  animation: _c,
-                  builder: (context, _) {
-                    // Quét ngang trong 38% đầu chu kỳ, nghỉ phần còn lại.
-                    final t = (_c.value / 0.38).clamp(0.0, 1.0);
-                    return LayoutBuilder(
-                      builder: (context, box) => Transform.translate(
-                        offset: Offset(-80 + (box.maxWidth + 160) * t, 0),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Transform(
-                            transform: Matrix4.skewX(-0.3),
-                            child: Container(
-                              width: 60,
-                              decoration: const BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0x00FFFFFF),
-                                    Color(0x59FFFFFF),
-                                    Color(0x00FFFFFF),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
+    final t = context.tokens;
+    final r = result;
 
-class _NotificationsRow extends StatelessWidget {
-  const _NotificationsRow({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: AppStrings.recentNotifications,
-      excludeSemantics: true,
-      child: Material(
-        color: AppColors.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-          side: const BorderSide(color: AppColors.borderNeutral),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: onTap,
-          child: SizedBox(
-            height: 50,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: const BoxDecoration(
-                          color: AppColors.chip,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: AppSvg(
-                            AppAssets.bell,
-                            size: 14.67,
-                            color: AppColors.accentDeep,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        AppStrings.recentNotifications,
-                        style: AppText.custom(
-                            14, FontWeight.w600, AppColors.accentDeep,
-                            lineHeight: 20),
-                      ),
-                    ],
-                  ),
-                  const AppSvg(
-                    AppAssets.chevronRight,
-                    size: 10.67,
-                    color: AppColors.titleInk,
+    final Widget content;
+    if (r == null) {
+      content = _hint(AppStrings.noScanYet, t);
+    } else if (r.allGroups.isEmpty && r.totalBytes == 0) {
+      content = _hint(AppStrings.noDuplicatesFound, t);
+    } else {
+      final shown = r.allGroups.take(3).toList();
+      final rows = <Widget>[];
+      for (final c in ScanCategory.values) {
+        final n = _removable(r, c);
+        if (n == 0) continue;
+        if (rows.isNotEmpty) rows.add(Divider(height: 1, color: t.divider));
+        rows.add(_CategoryRow(
+          icon: _iconFor(c),
+          label: _labelFor(c),
+          count: n,
+          bytes: r.bytes(c),
+          onTap: _onTapFor(c, onReview, onLargeFiles),
+        ));
+      }
+      content = Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (shown.isNotEmpty) ...[
+            Row(
+              children: [
+                for (var i = 0; i < 3; i++) ...[
+                  if (i > 0) const SizedBox(width: 10),
+                  Expanded(
+                    child: i < shown.length
+                        ? _GroupThumb(group: shown[i])
+                        : const SizedBox(height: 96),
                   ),
                 ],
-              ),
+              ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ───────────────────────── Cards ─────────────────────────
-
-class _IconCircle extends StatelessWidget {
-  const _IconCircle({
-    required this.icon,
-    required this.size,
-    required this.iconSize,
-    this.color = AppColors.iconTile,
-  });
-
-  final String icon;
-  final double size;
-  final double iconSize;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      child: Center(
-        child: AppSvg(icon, size: iconSize, color: AppColors.accentDeep),
-      ),
-    );
-  }
-}
-
-class _Pill extends StatelessWidget {
-  const _Pill(this.text, {required this.style, required this.padding});
-
-  final String text;
-  final TextStyle style;
-  final EdgeInsets padding;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: padding,
-      decoration: BoxDecoration(
-        color: AppColors.chip,
-        borderRadius: BorderRadius.circular(9999),
-      ),
-      child: Text(text, style: style),
-    );
-  }
-}
-
-class _DuplicatesCard extends StatelessWidget {
-  const _DuplicatesCard({required this.result, required this.onReview});
-
-  /// null khi chưa quét lần nào.
-  final ScanResult? result;
-  final VoidCallback onReview;
-
-  @override
-  Widget build(BuildContext context) {
-    final groups = result?.allGroups ?? const <MediaGroup>[];
-    final shown = groups.take(3).toList();
-    final more = groups.length - shown.length;
-
-    final Widget body;
-    if (result == null) {
-      body = Text(AppStrings.noScanYet, style: AppText.caption);
-    } else if (groups.isEmpty) {
-      body = Text(AppStrings.noDuplicatesFound, style: AppText.caption);
-    } else {
-      body = Row(
-        children: [
-          for (var i = 0; i < 3; i++) ...[
-            if (i > 0) const SizedBox(width: 10),
-            Expanded(
-              child: i < shown.length
-                  ? FadeSlideIn(
-                      delay: Duration(milliseconds: 150 + i * 110),
-                      dy: 0,
-                      scaleFrom: 0.92,
-                      child: _GroupThumb(group: shown[i]),
-                    )
-                  : const SizedBox(height: 84),
-            ),
+            const SizedBox(height: 16),
           ],
-          if (more > 0) ...[
-            const SizedBox(width: 10),
-            Expanded(child: _MoreTile(text: AppStrings.moreSets(more))),
-          ],
+          ...rows,
         ],
       );
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(22),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: t.border),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _IconCircle(
-                        icon: AppAssets.image, size: 40, iconSize: 18.33),
-                    const SizedBox(width: 12),
-                    Flexible(
-                      child: Text(
-                        AppStrings.duplicatePhotos,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.custom(
-                            18, FontWeight.w600, AppColors.titleInk,
-                            lineHeight: 24),
-                      ),
+                    Text(
+                      AppStrings.duplicatePhotos,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.custom(18, FontWeight.w700, t.textPrimary,
+                          lineHeight: 24),
                     ),
+                    if (r != null && r.totalBytes > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        AppStrings.freedSize(formatBytes(r.totalBytes)),
+                        style: AppText.custom(13, FontWeight.w500, t.textSecondary,
+                            lineHeight: 16),
+                      ),
+                    ],
                   ],
                 ),
               ),
-              if (groups.isNotEmpty)
-                InkWell(
-                  borderRadius: BorderRadius.circular(9999),
-                  onTap: onReview,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(9999),
-                    ),
-                    child: Text(
-                      AppStrings.review,
-                      style: AppText.custom(12, FontWeight.w600, Colors.white,
-                          lineHeight: 16),
+              if (r != null && r.allGroups.isNotEmpty)
+                Material(
+                  color: t.textPrimary,
+                  borderRadius: BorderRadius.circular(999),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(999),
+                    onTap: onReview,
+                    child: Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Text(
+                        AppStrings.review,
+                        style: AppText.custom(13, FontWeight.w600, t.surface,
+                            lineHeight: 18),
+                      ),
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-          body,
+          const SizedBox(height: 16),
+          content,
         ],
+      ),
+    );
+  }
+
+  static Widget _hint(String text, AppTokens t) => Text(
+        text,
+        style: AppText.custom(13, FontWeight.w400, t.textMuted, lineHeight: 18),
+      );
+}
+
+/// Một hàng loại: icon trên nền nhẹ, tên, số mục và dung lượng có thể dọn.
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.bytes,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final int count;
+  final int bytes;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: t.iconTile,
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon, size: 18, color: t.textPrimary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppText.custom(14, FontWeight.w600, t.textPrimary,
+                        lineHeight: 18),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    AppStrings.itemsCount(count),
+                    style: AppText.custom(12, FontWeight.w400, t.textSecondary,
+                        lineHeight: 16),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              formatBytes(bytes),
+              style: AppText.custom(15, FontWeight.w700, t.textPrimary,
+                  lineHeight: 18),
+            ),
+            if (onTap != null) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.chevron_right_rounded, size: 20, color: t.textMuted),
+            ],
+          ],
+        ),
       ),
     );
   }
 }
 
+/// Thumbnail của nhóm (ảnh giữ lại), bo góc, kèm badge số lượng.
 class _GroupThumb extends StatelessWidget {
   const _GroupThumb({required this.group});
 
@@ -915,22 +825,33 @@ class _GroupThumb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     return Stack(
       children: [
-        MediaThumbnail(id: group.keeper.id, height: 84, radius: 14),
+        MediaThumbnail(id: group.keeper.id, height: 96, radius: 16),
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: t.border),
+              ),
+            ),
+          ),
+        ),
         Positioned(
-          right: 4,
-          bottom: 4,
+          right: 6,
+          bottom: 6,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
             decoration: BoxDecoration(
-              color: const Color(0xB3191B27),
-              borderRadius: BorderRadius.circular(4),
+              color: const Color(0xB3000000),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
               '${group.items.length}x',
-              style: AppText.custom(9, FontWeight.w400, Colors.white,
-                  lineHeight: 13.5),
+              style: AppText.custom(11, FontWeight.w600, Colors.white,
+                  lineHeight: 14),
             ),
           ),
         ),
@@ -939,33 +860,116 @@ class _GroupThumb extends StatelessWidget {
   }
 }
 
-class _MoreTile extends StatelessWidget {
-  const _MoreTile({required this.text});
+int _reclaimBytes(ScanResult r) =>
+    r.allGroups.fold<int>(0, (s, g) => s + g.reclaimableBytes) +
+    r.largeVideos.fold<int>(0, (s, v) => s + (v.sizeBytes ?? 0)) +
+    r.screenshots.fold<int>(0, (s, v) => s + (v.sizeBytes ?? 0));
 
-  final String text;
+int _reclaimCount(ScanResult r) =>
+    r.allGroups.fold<int>(0, (s, g) => s + g.removable.length) +
+    r.largeVideos.length +
+    r.screenshots.length;
+
+/// Hero: dung lượng có thể dọn, một hành động chính theo trạng thái, và thanh dung lượng đã dùng.
+class _ReclaimCard extends StatelessWidget {
+  const _ReclaimCard({
+    required this.result,
+    required this.scanning,
+    required this.storage,
+    required this.onScan,
+    required this.onReview,
+  });
+
+  final ScanResult? result;
+  final bool scanning;
+  final DeviceStorage? storage;
+  final VoidCallback onScan;
+  final VoidCallback onReview;
 
   @override
   Widget build(BuildContext context) {
+    final r = result;
+    final String value;
+    final String caption;
+    final String action;
+    final VoidCallback? onTap;
+    if (scanning) {
+      value = '…';
+      caption = AppStrings.reclaimScanningBody;
+      action = AppStrings.reclaimStartScan;
+      onTap = null;
+    } else if (r == null) {
+      value = '—';
+      caption = AppStrings.reclaimNotScannedBody;
+      action = AppStrings.reclaimStartScan;
+      onTap = onScan;
+    } else if (_reclaimCount(r) == 0) {
+      value = formatBytes(0);
+      caption = AppStrings.reclaimNothingBody;
+      action = AppStrings.reclaimScanAgain;
+      onTap = onScan;
+    } else {
+      value = formatBytes(_reclaimBytes(r));
+      caption = AppStrings.reclaimItemsReady(_reclaimCount(r));
+      action = AppStrings.reclaimReview;
+      onTap = onReview;
+    }
+
+    final used = (storage?.usedFraction ?? 0).clamp(0.0, 1.0).toDouble();
+    final s = storage;
+
     return Container(
-      height: 84,
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.chip,
-        borderRadius: BorderRadius.circular(14),
+        gradient: AppColors.heroGradient,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.heroBorder),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppSvg(
-            AppAssets.moreHorizontal,
-            width: 12,
-            height: 3,
-            color: AppColors.textBlue,
+          Text(
+            AppStrings.reclaimLabel.toUpperCase(),
+            style: AppText.custom(11, FontWeight.w600, AppColors.onHeroMuted,
+                letterSpacing: 0.8),
           ),
           const SizedBox(height: 4),
           Text(
-            text,
-            style: AppText.custom(11, FontWeight.w600, AppColors.textBlue,
-                lineHeight: 14),
+            value,
+            style: AppText.custom(32, FontWeight.w700, AppColors.onHero,
+                lineHeight: 36, letterSpacing: -0.8),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            caption,
+            style: AppText.custom(12, FontWeight.w400, AppColors.onHeroSecondary,
+                lineHeight: 16),
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: used,
+              minHeight: 4,
+              backgroundColor: AppColors.heroTrack,
+              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.heroAccent),
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (s != null)
+            Text(
+              AppStrings.storageUsedOf(formatBytes(s.usedBytes), formatBytes(s.totalBytes)),
+              style: AppText.custom(11, FontWeight.w500, AppColors.onHeroMuted),
+            ),
+          const SizedBox(height: 12),
+          PrimaryButton(
+            label: action,
+            height: 40,
+            radius: 12,
+            isLoading: scanning,
+            onPressed: onTap,
+            color: Colors.white,
+            labelStyle: AppText.custom(14, FontWeight.w600, AppColors.primary),
           ),
         ],
       ),
@@ -973,224 +977,90 @@ class _MoreTile extends StatelessWidget {
   }
 }
 
-class _TappableCard extends StatelessWidget {
-  const _TappableCard({
-    required this.onTap,
-    required this.semanticLabel,
-    required this.radius,
-    required this.child,
+/// Hàng lối tắt gọn cho các màn phụ.
+class _ShortcutRow extends StatelessWidget {
+  const _ShortcutRow({
+    required this.onLargeFiles,
+    required this.onAppManager,
+    required this.onNotifications,
   });
 
-  final VoidCallback onTap;
-  final String semanticLabel;
-  final double radius;
-  final Widget child;
+  final VoidCallback onLargeFiles;
+  final VoidCallback onAppManager;
+  final VoidCallback onNotifications;
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        color: Colors.transparent,
-        child: Ink(
-          decoration: _cardDecoration(radius),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(radius),
-            onTap: onTap,
-            child: Padding(padding: const EdgeInsets.all(16), child: child),
+    return Row(
+      children: [
+        Expanded(
+          child: _ShortcutTile(
+            icon: Icons.movie_outlined,
+            label: AppStrings.largeFiles,
+            onTap: onLargeFiles,
           ),
         ),
-      ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _ShortcutTile(
+            icon: Icons.apps_rounded,
+            label: AppStrings.appManager,
+            onTap: onAppManager,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _ShortcutTile(
+            icon: Icons.notifications_none_rounded,
+            label: AppStrings.shortcutNotifications,
+            onTap: onNotifications,
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// Thẻ vuông của hàng hai cột: icon + phụ kiện, tiêu đề lớn, link dưới đáy.
-class _SquareCard extends StatelessWidget {
-  const _SquareCard({
-    required this.onTap,
+class _ShortcutTile extends StatelessWidget {
+  const _ShortcutTile({
+    required this.icon,
     required this.label,
-    required this.icon,
-    required this.iconSize,
-    required this.accessory,
-    required this.linkText,
-    required this.linkColor,
-  });
-
-  final VoidCallback onTap;
-  final String label;
-  final String icon;
-  final double iconSize;
-  final Widget accessory;
-  final String linkText;
-  final Color linkColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: Material(
-        color: Colors.transparent,
-        child: Ink(
-          decoration: _cardDecoration(24),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minHeight: 156),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _IconCircle(icon: icon, size: 32, iconSize: iconSize),
-                        accessory,
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      label,
-                      style: AppText.custom(
-                          19, FontWeight.w700, AppColors.titleInk,
-                          lineHeight: 26, letterSpacing: -0.3),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text(
-                          linkText,
-                          style: AppText.custom(11, FontWeight.w600, linkColor,
-                              lineHeight: 14),
-                        ),
-                        const SizedBox(width: 8),
-                        AppSvg(AppAssets.arrowRight,
-                            size: 12, color: linkColor),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LargeFilesCard extends StatelessWidget {
-  const _LargeFilesCard({required this.threshold, required this.onTap});
-
-  final int threshold;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SquareCard(
-      onTap: onTap,
-      label: AppStrings.largeFiles,
-      icon: AppAssets.folderPlus,
-      iconSize: 15,
-      accessory: Flexible(
-        child: _Pill(
-          AppStrings.filterLabel(formatBytes(threshold)),
-          style: AppText.custom(10.5, FontWeight.w600, AppColors.textBlue,
-              lineHeight: 14),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-        ),
-      ),
-      linkText: AppStrings.inspect,
-      linkColor: AppColors.accentDeep,
-    );
-  }
-}
-
-class _AppManagerCard extends StatelessWidget {
-  const _AppManagerCard({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SquareCard(
-      onTap: onTap,
-      label: AppStrings.appManager,
-      icon: AppAssets.gridDots,
-      iconSize: 14,
-      accessory: Container(
-        width: 8,
-        height: 8,
-        decoration: const BoxDecoration(
-          color: AppColors.alertDot,
-          shape: BoxShape.circle,
-        ),
-      ),
-      linkText: AppStrings.cleanUp,
-      linkColor: AppColors.reviewLink,
-    );
-  }
-}
-
-class _WideLinkCard extends StatelessWidget {
-  const _WideLinkCard({
     required this.onTap,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
   });
 
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
-  final String title;
-  final String subtitle;
-  final String icon;
 
   @override
   Widget build(BuildContext context) {
-    return _TappableCard(
-      onTap: onTap,
-      semanticLabel: title,
-      radius: 22,
-      child: Row(
-        children: [
-          _IconCircle(icon: icon, size: 36, iconSize: 16),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppText.custom(16, FontWeight.w500, AppColors.titleInk,
-                      lineHeight: 24),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppText.custom(14, FontWeight.w400, AppColors.textBlue,
-                      lineHeight: 20),
-                ),
-              ],
-            ),
+    return Material(
+      color: context.tokens.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: context.tokens.border),
           ),
-          const SizedBox(width: 12),
-          Container(
-            width: 36,
-            height: 36,
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child:
-                  AppSvg(AppAssets.arrowUpRight, size: 14, color: Colors.white),
-            ),
+          child: Column(
+            children: [
+              Icon(icon, size: 22, color: context.tokens.textPrimary),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.custom(
+                    12, FontWeight.w600, context.tokens.textSecondary),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

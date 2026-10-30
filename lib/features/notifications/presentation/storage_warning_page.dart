@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/ring_chart.dart';
@@ -64,13 +64,13 @@ class StorageWarningPage extends ConsumerWidget {
                     size: 104,
                     strokeWidth: 12,
                     segments: [
-                      RingSegment(s.usedBytes.toDouble(), AppColors.error)
+                      RingSegment(s.usedBytes.toDouble(), context.tokens.error)
                     ],
                     total: s.totalBytes.toDouble(),
                     center: Text(
                       '$percent%',
                       style: AppText.custom(
-                          22, FontWeight.w700, AppColors.titleInk),
+                          22, FontWeight.w700, context.tokens.textPrimary),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -81,7 +81,7 @@ class StorageWarningPage extends ConsumerWidget {
                         Text(
                           AppStrings.storageWarnHeadline,
                           style: AppText.custom(
-                              16, FontWeight.w600, AppColors.titleInk),
+                              16, FontWeight.w600, context.tokens.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -90,7 +90,7 @@ class StorageWarningPage extends ConsumerWidget {
                             formatBytes(s.totalBytes),
                           ),
                           style: AppText.custom(
-                              13, FontWeight.w400, AppColors.textMuted,
+                              13, FontWeight.w400, context.tokens.textMuted,
                               lineHeight: 18),
                         ),
                       ],
@@ -127,13 +127,13 @@ class StorageWarningPage extends ConsumerWidget {
                   child: Text(
                     AppStrings.storageWarnTotal,
                     style: AppText.custom(
-                        13, FontWeight.w400, AppColors.textMuted),
+                        13, FontWeight.w400, context.tokens.textMuted),
                   ),
                 ),
                 Text(
                   formatBytes(dupBytes + largeBytes),
                   style:
-                      AppText.custom(14, FontWeight.w700, AppColors.titleInk),
+                      AppText.custom(14, FontWeight.w700, context.tokens.textPrimary),
                 ),
               ],
             ),
@@ -175,23 +175,23 @@ class _FreeableTile extends StatelessWidget {
                 Text(
                   title,
                   style:
-                      AppText.custom(14, FontWeight.w600, AppColors.titleInk),
+                      AppText.custom(14, FontWeight.w600, context.tokens.textPrimary),
                 ),
                 Text(
                   caption,
                   style: AppText.custom(
-                      12.5, FontWeight.w400, AppColors.textMuted),
+                      12.5, FontWeight.w400, context.tokens.textMuted),
                 ),
               ],
             ),
           ),
           Text(
             formatBytes(bytes),
-            style: AppText.custom(14, FontWeight.w700, AppColors.titleInk),
+            style: AppText.custom(14, FontWeight.w700, context.tokens.textPrimary),
           ),
           const SizedBox(width: 6),
-          const AppSvg(AppAssets.chevronRight,
-              size: 14, color: AppColors.textMuted),
+          AppSvg(AppAssets.chevronRight,
+              size: 14, color: context.tokens.textMuted),
         ],
       ),
     );

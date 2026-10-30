@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_tokens.dart';
 
 class RingSegment {
   const RingSegment(this.value, this.color);
@@ -22,7 +22,7 @@ class RingChart extends StatelessWidget {
     this.size = 128,
     this.strokeWidth = 16,
     this.center,
-    this.trackColor = AppColors.chip,
+    this.trackColor,
   });
 
   final List<RingSegment> segments;
@@ -30,7 +30,7 @@ class RingChart extends StatelessWidget {
   final double size;
   final double strokeWidth;
   final Widget? center;
-  final Color trackColor;
+  final Color? trackColor;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class RingChart extends StatelessWidget {
             segments: segments,
             total: total,
             strokeWidth: strokeWidth,
-            trackColor: trackColor,
+            trackColor: trackColor ?? context.tokens.chip,
             progress: t,
           ),
           child: Center(child: center),

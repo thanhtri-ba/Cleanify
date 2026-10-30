@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/sub_page_scaffold.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
@@ -20,9 +20,9 @@ class PrivacyPolicyPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceTint,
+            color: context.tokens.surfaceMuted,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.borderNeutral),
+            border: Border.all(color: context.tokens.border),
           ),
           child: Text(
             AppStrings.privacyPolicyBody,

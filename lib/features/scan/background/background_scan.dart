@@ -69,8 +69,8 @@ Future<bool> runBackgroundScan() async {
       matcher: const OpenCvFeatureMatcher(),
     ).run(cancel: CancelToken());
     if (outcome.end != ScanEnd.completed) return false;
-    await prefs.setInt(backgroundScanLastRunKey,
-        DateTime.now().millisecondsSinceEpoch);
+    await prefs.setInt(
+        backgroundScanLastRunKey, DateTime.now().millisecondsSinceEpoch);
     await prefs.setInt(
       backgroundScanDuplicatesKey,
       outcome.result.duplicateGroups.length,

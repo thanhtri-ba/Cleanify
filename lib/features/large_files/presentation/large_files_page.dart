@@ -7,6 +7,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/utils/format_date.dart';
 import '../../../core/widgets/primary_button.dart';
@@ -114,6 +115,12 @@ class _LargeFilesPageState extends ConsumerState<LargeFilesPage> {
                 context.push(AppRoutes.cleanupReview);
               },
       ),
+      itemCount: videos.length,
+      itemBuilder: (context, i) => _VideoRow(
+        item: videos[i],
+        selected: selected.contains(videos[i].id),
+        onTap: () => _toggle(videos[i].id),
+      ),
       children: [
         SizedBox(
           height: 38,
@@ -150,12 +157,6 @@ class _LargeFilesPageState extends ConsumerState<LargeFilesPage> {
             body: AppStrings.largeEmptyBody,
           ),
       ],
-      itemCount: videos.length,
-      itemBuilder: (context, i) => _VideoRow(
-        item: videos[i],
-        selected: selected.contains(videos[i].id),
-        onTap: () => _toggle(videos[i].id),
-      ),
     );
   }
 }
@@ -180,15 +181,15 @@ class _ThresholdChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: on ? AppColors.primary : AppColors.surface,
+          color: on ? AppColors.primary : context.tokens.surface,
           borderRadius: BorderRadius.circular(9999),
           border: Border.all(
-              color: on ? AppColors.primary : AppColors.borderNeutral),
+              color: on ? AppColors.primary : context.tokens.border),
         ),
         child: Text(
           label,
           style: AppText.custom(12.5, FontWeight.w600,
-              on ? Colors.white : AppColors.textSecondary),
+              on ? Colors.white : context.tokens.textSecondary),
         ),
       ),
     );
@@ -228,17 +229,17 @@ class _VideoRow extends StatelessWidget {
                 Text(
                   formatShortDate(item.createdAt),
                   style:
-                      AppText.custom(14, FontWeight.w600, AppColors.titleInk),
+                      AppText.custom(14, FontWeight.w600, context.tokens.textPrimary),
                 ),
                 Text(
                   '${item.width}×${item.height}',
                   style:
-                      AppText.custom(12, FontWeight.w400, AppColors.textMuted),
+                      AppText.custom(12, FontWeight.w400, context.tokens.textMuted),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   formatBytes(item.sizeBytes ?? 0),
-                  style: AppText.custom(15, FontWeight.w700, AppColors.titleInk,
+                  style: AppText.custom(15, FontWeight.w700, context.tokens.textPrimary,
                       letterSpacing: -0.2),
                 ),
               ],

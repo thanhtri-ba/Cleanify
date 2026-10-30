@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../activity/application/cleanup_history.dart';
+import '../../activity/domain/cleanup_session.dart';
 import '../domain/cleanup_runner.dart';
 import '../domain/scan_models.dart';
 import 'scan_controller.dart';
@@ -150,6 +152,17 @@ class CleanupController extends Notifier<CleanupState> {
             count: deleted.length,
             at: DateTime.now(),
             byCategory: byCategory,
+          ));
+      ref.read(cleanupHistoryProvider.notifier).add(CleanupSession(
+            id: DateTime.now().microsecondsSinceEpoch,
+            at: DateTime.now(),
+            bytes: state.deletedBytes,
+            count: deleted.length,
+            categories: [
+              for (final c in ScanCategory.values)
+                if ((byCategory[c] ?? 0) > 0) c,
+            ],
+            completed: outcome.isFullSuccess,
           ));
       ref.read(scanControllerProvider.notifier).removeDeleted(deleted);
     }

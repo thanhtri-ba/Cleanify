@@ -1,16 +1,18 @@
+import '../theme/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/activity/presentation/activity_page.dart';
+import '../../features/support/presentation/help_feedback_page.dart';
+import '../../features/activity/presentation/cleanup_history_page.dart';
+import '../../features/activity/presentation/cleanup_session_page.dart';
 import '../../features/analysis/presentation/storage_analysis_page.dart';
 import '../../features/app_manager/presentation/app_manager_page.dart';
-import '../../features/auth/application/auth_session.dart';
-import '../../features/auth/application/pending_verification.dart';
-import '../../features/auth/presentation/create_account_page.dart';
-import '../../features/auth/presentation/forgot_password_page.dart';
-import '../../features/auth/presentation/sign_in_page.dart';
-import '../../features/auth/presentation/verify_email_page.dart';
+import '../../features/permissions/presentation/photo_denied_page.dart';
+import '../../features/permissions/presentation/photo_limited_page.dart';
 import '../../features/duplicates/presentation/duplicate_photos_page.dart';
+import '../../features/duplicates/presentation/group_review_page.dart';
 import '../../features/home/presentation/home_page.dart';
 import '../../features/large_files/presentation/large_files_page.dart';
 import '../../features/notifications/presentation/cleanup_detail_page.dart';
@@ -33,6 +35,10 @@ import '../../features/scan/presentation/scan_error_page.dart';
 import '../../features/scan/presentation/scan_partial_page.dart';
 import '../../features/scan/presentation/smart_scan_page.dart';
 import '../../features/settings/presentation/privacy_policy_page.dart';
+import '../../features/large_files/presentation/file_search_page.dart';
+import '../../features/settings/presentation/about_page.dart';
+import '../../features/settings/presentation/appearance_page.dart';
+import '../../features/settings/presentation/scan_preferences_page.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/storage/presentation/storage_page.dart';
 import '../widgets/app_page_transition.dart';
@@ -62,21 +68,19 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) => resolveRedirect(
       location: state.uri.path,
       onboardingSeen: ref.read(onboardingSeenProvider),
-      signedIn: ref.read(authSessionProvider) is SignedIn,
-      pendingVerificationEmail: ref.read(pendingVerificationEmailProvider),
       photoAccessPromptSeen: ref.read(photoAccessPromptSeenProvider),
     ),
     routes: [
       GoRoute(
         path: AppRoutes.onboarding,
         pageBuilder: (context, state) =>
-            _fade(state, const OnboardingStep1Page()),
+            _fade(state, Theme(data: AppTheme.light(), child: const OnboardingStep1Page())),
         routes: [
           GoRoute(
             path: '2',
             pageBuilder: (context, state) => _fade(
               state,
-              const OnboardingStep2Page(),
+              Theme(data: AppTheme.light(), child: const OnboardingStep2Page()),
               from: const Offset(0.06, 0),
             ),
           ),
@@ -84,29 +88,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '3',
             pageBuilder: (context, state) => _fade(
               state,
-              const OnboardingStep3Page(),
+              Theme(data: AppTheme.light(), child: const OnboardingStep3Page()),
               from: const Offset(0.06, 0),
             ),
           ),
         ],
-      ),
-      GoRoute(
-        path: AppRoutes.signIn,
-        pageBuilder: (context, state) => _fade(state, const SignInPage()),
-      ),
-      GoRoute(
-        path: AppRoutes.createAccount,
-        pageBuilder: (context, state) =>
-            _fade(state, const CreateAccountPage()),
-      ),
-      GoRoute(
-        path: AppRoutes.forgotPassword,
-        pageBuilder: (context, state) =>
-            _fade(state, const ForgotPasswordPage()),
-      ),
-      GoRoute(
-        path: AppRoutes.verifyEmail,
-        pageBuilder: (context, state) => _fade(state, const VerifyEmailPage()),
       ),
       GoRoute(
         path: AppRoutes.home,
@@ -117,6 +103,28 @@ final routerProvider = Provider<GoRouter>((ref) {
         pageBuilder: (context, state) => _plain(state, const StoragePage()),
       ),
       GoRoute(
+        path: AppRoutes.help,
+        pageBuilder: (context, state) => _fade(state, const HelpFeedbackPage()),
+      ),
+      GoRoute(
+        path: AppRoutes.activity,
+        pageBuilder: (context, state) => _plain(state, const ActivityPage()),
+      ),
+      GoRoute(
+        path: AppRoutes.cleanupHistory,
+        pageBuilder: (context, state) =>
+            _fade(state, const CleanupHistoryPage()),
+      ),
+      GoRoute(
+        path: '/activity/history/:id',
+        pageBuilder: (context, state) => _fade(
+          state,
+          CleanupSessionPage(
+            sessionId: int.tryParse(state.pathParameters['id'] ?? '') ?? -1,
+          ),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.settings,
         pageBuilder: (context, state) => _plain(state, const SettingsPage()),
       ),
@@ -124,6 +132,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.privacyPolicy,
         pageBuilder: (context, state) =>
             _fade(state, const PrivacyPolicyPage()),
+      ),
+      GoRoute(
+        path: AppRoutes.appearanceSettings,
+        pageBuilder: (context, state) =>
+            _fade(state, const AppearancePage()),
+      ),
+      GoRoute(
+        path: AppRoutes.scanPreferences,
+        pageBuilder: (context, state) =>
+            _fade(state, const ScanPreferencesPage()),
+      ),
+      GoRoute(
+        path: AppRoutes.fileSearch,
+        pageBuilder: (context, state) => _fade(state, const FileSearchPage()),
+      ),
+      GoRoute(
+        path: AppRoutes.about,
+        pageBuilder: (context, state) => _fade(state, const AboutPage()),
       ),
       GoRoute(
         path: AppRoutes.scan,
@@ -188,6 +214,13 @@ final routerProvider = Provider<GoRouter>((ref) {
             _fade(state, const DuplicatePhotosPage()),
       ),
       GoRoute(
+        path: AppRoutes.groupReview,
+        pageBuilder: (context, state) => _fade(
+          state,
+          GroupReviewPage(groupId: state.uri.queryParameters['id'] ?? ''),
+        ),
+      ),
+      GoRoute(
         path: AppRoutes.largeFiles,
         pageBuilder: (context, state) => _fade(state, const LargeFilesPage()),
       ),
@@ -206,7 +239,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: AppRoutes.fileAccess,
-        pageBuilder: (context, state) => _fade(state, const FileAccessPage()),
+        pageBuilder: (context, state) => _fade(state, Theme(data: AppTheme.light(), child: const FileAccessPage())),
+      ),
+      GoRoute(
+        path: AppRoutes.photoLimited,
+        pageBuilder: (context, state) => _fade(state, Theme(data: AppTheme.light(), child: const PhotoLimitedPage())),
+      ),
+      GoRoute(
+        path: AppRoutes.photoDenied,
+        pageBuilder: (context, state) => _fade(state, Theme(data: AppTheme.light(), child: const PhotoDeniedPage())),
       ),
     ],
   );
@@ -219,14 +260,6 @@ class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
     ref.listen<bool>(
       onboardingSeenProvider,
-      (previous, next) => notifyListeners(),
-    );
-    ref.listen<AuthSession>(
-      authSessionProvider,
-      (previous, next) => notifyListeners(),
-    );
-    ref.listen<String?>(
-      pendingVerificationEmailProvider,
       (previous, next) => notifyListeners(),
     );
     ref.listen<bool>(

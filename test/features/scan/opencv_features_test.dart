@@ -16,7 +16,8 @@ Uint8List scene(int seed, {int size = 320}) {
     cv.rectangle(
       img,
       cv.Rect(x, y, w, h),
-      cv.Scalar(rng.nextInt(256).toDouble(), rng.nextInt(256).toDouble(), rng.nextInt(256).toDouble()),
+      cv.Scalar(rng.nextInt(256).toDouble(), rng.nextInt(256).toDouble(),
+          rng.nextInt(256).toDouble()),
       thickness: -1,
     );
   }

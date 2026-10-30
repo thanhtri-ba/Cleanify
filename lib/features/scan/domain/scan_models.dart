@@ -167,7 +167,7 @@ class ScanConfig {
     this.concurrency = 6,
     this.pdqMaxDistance = 31,
     this.pdqMinQuality = 10,
-    this.pdqMaxBucketSize = 1000,
+    this.pdqMaxBucketSize = 100000,
     this.hashFlushSize = 200,
     this.orbTopK = 10,
     this.orbMinInliers = 20,

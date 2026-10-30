@@ -6,14 +6,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 FeatureSet randomFeatures(int seed, {int n = 120}) {
   final rng = math.Random(seed);
-  final d = Uint8List.fromList(List.generate(n * descriptorBytes, (_) => rng.nextInt(256)));
+  final d = Uint8List.fromList(
+      List.generate(n * descriptorBytes, (_) => rng.nextInt(256)));
   return FeatureSet(d, Float32List(n * 2));
 }
 
 /// Giữ một phần mô tả của [f], đổi phần còn lại: mô phỏng ảnh cắt.
 FeatureSet partOf(FeatureSet f, {int keep = 80, int seed = 1}) {
-  final rng = math.Random(seed);
-  final d = Uint8List.fromList(f.descriptors.sublist(0, keep * descriptorBytes));
+  final d =
+      Uint8List.fromList(f.descriptors.sublist(0, keep * descriptorBytes));
   return FeatureSet(d, Float32List(keep * 2));
 }
 

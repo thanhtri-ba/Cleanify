@@ -6,6 +6,7 @@ import '../../../../core/l10n/app_strings.dart';
 import '../../../../core/theme/app_assets.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text.dart';
+import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_svg.dart';
 import '../../../../core/widgets/fade_slide_in.dart';
 import '../../../../core/widgets/primary_button.dart';
@@ -55,16 +56,16 @@ class FlowNavBar extends StatelessWidget {
                         label: AppStrings.back,
                         excludeSemantics: true,
                         child: Material(
-                          color: AppColors.iconTile,
+                          color: context.tokens.iconTile,
                           shape: const CircleBorder(),
                           child: InkWell(
                             customBorder: const CircleBorder(),
                             onTap: onBack,
-                            child: const Center(
+                            child: Center(
                               child: AppSvg(
                                 AppAssets.chevronLeft,
                                 size: 18,
-                                color: AppColors.titleInk,
+                                color: context.tokens.textPrimary,
                               ),
                             ),
                           ),
@@ -73,7 +74,7 @@ class FlowNavBar extends StatelessWidget {
               ),
               Text(
                 title,
-                style: AppText.custom(18, FontWeight.w600, AppColors.titleInk),
+                style: AppText.custom(18, FontWeight.w600, context.tokens.textPrimary),
               ),
               const SizedBox(width: 36),
             ],
@@ -106,7 +107,7 @@ class FlowScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.tokens.surface,
       body: Column(
         children: [
           FlowNavBar(title: title, onBack: onBack),
@@ -144,9 +145,9 @@ class FlowActionBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(24, 12, 24, math.max(8, inset)),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.tokens.surface,
         border: Border(
-          top: BorderSide(color: topBorder ?? AppColors.footerBorder),
+          top: BorderSide(color: topBorder ?? context.tokens.divider),
         ),
       ),
       child: Column(
@@ -193,7 +194,7 @@ class FlowSecondaryButton extends StatelessWidget {
     return SecondaryButton(
       label: label,
       height: 52,
-      borderColor: AppColors.divider2,
+      borderColor: context.tokens.border,
       labelStyle: AppText.custom(14, FontWeight.w600, AppColors.accent),
       onPressed: onPressed,
     );
@@ -212,22 +213,22 @@ class InfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
+        color: context.tokens.surfaceMuted,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.divider2),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: AppText.custom(13, FontWeight.w600, AppColors.titleInk,
+            style: AppText.custom(13, FontWeight.w600, context.tokens.textPrimary,
                 lineHeight: 18),
           ),
           const SizedBox(height: 6),
           Text(
             body,
-            style: AppText.custom(12, FontWeight.w400, AppColors.textSecondary,
+            style: AppText.custom(12, FontWeight.w400, context.tokens.textSecondary,
                 lineHeight: 18),
           ),
         ],
@@ -265,14 +266,14 @@ class GroupCard extends StatelessWidget {
   const GroupCard({
     super.key,
     required this.children,
-    this.color = AppColors.surface,
+    this.color,
     this.bordered = true,
     this.shadow = false,
     this.radius = 22,
   });
 
   final List<Widget> children;
-  final Color color;
+  final Color? color;
   final bool bordered;
   final bool shadow;
   final double radius;
@@ -281,9 +282,9 @@ class GroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? context.tokens.surface,
         borderRadius: BorderRadius.circular(radius),
-        border: bordered ? Border.all(color: AppColors.divider2) : null,
+        border: bordered ? Border.all(color: context.tokens.border) : null,
         boxShadow: shadow
             ? const [
                 BoxShadow(
@@ -299,7 +300,7 @@ class GroupCard extends StatelessWidget {
         children: [
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0 && bordered)
-              const Divider(height: 1, thickness: 1, color: AppColors.divider2),
+              Divider(height: 1, thickness: 1, color: context.tokens.border),
             children[i],
           ],
         ],
@@ -340,8 +341,8 @@ class CategoryRow extends StatelessWidget {
             Container(
               width: tile,
               height: tile,
-              decoration: const BoxDecoration(
-                color: AppColors.categoryTile,
+              decoration: BoxDecoration(
+                color: context.tokens.iconTile,
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -363,7 +364,7 @@ class CategoryRow extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.custom(
-                        14, FontWeight.w500, AppColors.titleInk,
+                        14, FontWeight.w500, context.tokens.textPrimary,
                         lineHeight: 20),
                   ),
                   if (hint != null)
@@ -372,7 +373,7 @@ class CategoryRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppText.custom(
-                          11, FontWeight.w400, AppColors.textMuted,
+                          11, FontWeight.w400, context.tokens.textMuted,
                           lineHeight: 15),
                     ),
                 ],
@@ -401,8 +402,8 @@ class RowValue extends StatelessWidget {
     return Text(
       text,
       style: muted
-          ? AppText.custom(12, FontWeight.w500, AppColors.textMuted)
-          : AppText.custom(14, FontWeight.w500, AppColors.titleInk),
+          ? AppText.custom(12, FontWeight.w500, context.tokens.textMuted)
+          : AppText.custom(14, FontWeight.w500, context.tokens.textPrimary),
     );
   }
 }
@@ -421,7 +422,7 @@ class SelectCheck extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: selected ? AppColors.primary : AppColors.surface,
+        color: selected ? AppColors.primary : context.tokens.surface,
         shape: BoxShape.circle,
         border: Border.all(
           color: selected ? AppColors.primary : AppColors.cardBorderSoft,
@@ -490,9 +491,9 @@ class _StateBadgeState extends State<StateBadge>
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: AppColors.surfaceTint,
+              color: context.tokens.surfaceMuted,
               shape: BoxShape.circle,
-              border: Border.all(color: AppColors.divider2),
+              border: Border.all(color: context.tokens.border),
             ),
             child: Center(
               child: TweenAnimationBuilder<double>(
@@ -505,9 +506,9 @@ class _StateBadgeState extends State<StateBadge>
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: context.tokens.surface,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.divider2),
+                    border: Border.all(color: context.tokens.border),
                   ),
                   child: Center(
                     child: TweenAnimationBuilder<double>(

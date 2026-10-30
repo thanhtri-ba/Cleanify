@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 
 import '../l10n/app_strings.dart';
 import '../theme/app_assets.dart';
-import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
 import 'app_svg.dart';
+import '../theme/app_tokens.dart';
 
-enum AppTab { home, scan, storage, settings }
+enum AppTab { home, scan, activity, settings }
 
-/// Thanh điều hướng dưới (Home · Clean · Storage · Settings) theo Figma.
+/// Thanh điều hướng dưới (Home · Clean · Activity · Settings) theo Figma.
 /// Nền pill trượt sang tab đang chọn, icon nhích nhẹ khi kích hoạt.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({super.key, required this.current, required this.onTap});
@@ -22,7 +22,7 @@ class AppBottomNav extends StatelessWidget {
   static const _items = <(AppTab, String, String)>[
     (AppTab.home, AppAssets.home, AppStrings.navHome),
     (AppTab.scan, AppAssets.broom, AppStrings.navClean),
-    (AppTab.storage, AppAssets.pieChart, AppStrings.navStorage),
+    (AppTab.activity, AppAssets.history, AppStrings.navActivity),
     (AppTab.settings, AppAssets.settings, AppStrings.navSettings),
   ];
 
@@ -37,9 +37,9 @@ class AppBottomNav extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 4, 16, bottom),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: context.tokens.surface,
           borderRadius: BorderRadius.circular(26),
-          border: Border.all(color: AppColors.borderNeutral),
+          border: Border.all(color: context.tokens.border),
           boxShadow: const [
             BoxShadow(
               color: Color(0x26111827),
@@ -68,7 +68,7 @@ class AppBottomNav extends StatelessWidget {
                     height: 52,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: AppColors.chip,
+                        color: context.tokens.surfaceMuted,
                         borderRadius: BorderRadius.circular(18),
                       ),
                     ),
@@ -112,7 +112,7 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final color = active ? AppColors.primary : AppColors.textBlue;
+    final color = active ? context.tokens.textPrimary : context.tokens.textMuted;
     return Semantics(
       button: true,
       selected: active,

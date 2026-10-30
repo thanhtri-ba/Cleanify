@@ -70,13 +70,14 @@ class OpenCvFeatures {
       final m = pair[0];
       final n = pair[1];
       if (m.distance < loweRatio * n.distance) {
-        fromPts.add(cv.Point2f(a.points[m.queryIdx * 2], a.points[m.queryIdx * 2 + 1]));
-        toPts.add(cv.Point2f(b.points[m.trainIdx * 2], b.points[m.trainIdx * 2 + 1]));
+        fromPts.add(
+            cv.Point2f(a.points[m.queryIdx * 2], a.points[m.queryIdx * 2 + 1]));
+        toPts.add(
+            cv.Point2f(b.points[m.trainIdx * 2], b.points[m.trainIdx * 2 + 1]));
       }
     }
-    final result = fromPts.length < minFeatures
-        ? 0
-        : _ransacInliers(fromPts, toPts);
+    final result =
+        fromPts.length < minFeatures ? 0 : _ransacInliers(fromPts, toPts);
     bf.dispose();
     da.dispose();
     db.dispose();

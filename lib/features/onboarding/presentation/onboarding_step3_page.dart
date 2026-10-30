@@ -7,6 +7,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../application/onboarding_state.dart';
@@ -35,11 +36,11 @@ class OnboardingStep3Page extends ConsumerWidget {
           text: AppStrings.onboarding3Title,
           maxWidth: 330,
         ),
-        const OnboardingBody(
+        OnboardingBody(
           top: 571,
           text: AppStrings.onboarding3Body,
           sidePadding: 36,
-          color: AppColors.textSecondary,
+          color: context.tokens.textSecondary,
         ),
         const OnboardingDots(
           top: 686,
@@ -56,7 +57,7 @@ class OnboardingStep3Page extends ConsumerWidget {
           child: PrimaryButton(
             label: AppStrings.startFreeTrial,
             height: 56,
-            color: AppColors.cta,
+            color: context.tokens.cta,
             labelStyle: AppText.ctaLabel,
             trailing: const AppSvg(AppAssets.arrowRight, size: 13.33),
             shadows: const [

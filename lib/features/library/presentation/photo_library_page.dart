@@ -7,13 +7,18 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_date.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../permissions/application/media_access_controller.dart';
 import '../../permissions/domain/media_access.dart';
+import '../../scan/application/scan_controller.dart';
 import '../../scan/domain/media_item.dart';
+import '../../scan/domain/scan_models.dart';
 import '../../scan/presentation/widgets/media_thumbnail.dart';
+import '../../../core/utils/format_bytes.dart';
+import '../../../core/theme/app_theme.dart';
 import '../application/library_controller.dart';
 import 'photo_viewer_page.dart';
 
@@ -30,12 +35,19 @@ class PhotoLibraryPage extends ConsumerStatefulWidget {
 
 class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
   static const _columns = 3;
-  static const _gap = 2.0;
+  static const _gap = 8.0;
 
   final _scroll = ScrollController();
 
   /// null khi đang kiểm tra quyền.
   bool? _hasAccess;
+
+  /// Ảnh đã chọn bằng vòng tròn trên lưới (Figma 127:1558).
+  final Set<String> _selected = {};
+
+  void _toggleSelect(String id) => setState(() {
+        if (!_selected.remove(id)) _selected.add(id);
+      });
 
   @override
   void initState() {
@@ -72,7 +84,10 @@ class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 280),
         reverseTransitionDuration: const Duration(milliseconds: 220),
-        pageBuilder: (_, __, ___) => PhotoViewerPage(initialIndex: index),
+        pageBuilder: (_, __, ___) => Theme(
+          data: AppTheme.dark(),
+          child: PhotoViewerPage(initialIndex: index),
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           if (MediaQuery.maybeDisableAnimationsOf(context) ?? false) {
             return child;
@@ -100,9 +115,26 @@ class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(libraryControllerProvider);
+    final result =
+        ref.watch(scanControllerProvider.select((s) => s.outcome?.result));
+    // Chỉ ảnh đã có trong kết quả quét mới đưa vào bước xem lại xóa.
+    final plannable = <String>{
+      for (final g in result?.allGroups ?? const <MediaGroup>[])
+        for (final m in g.removable) m.id,
+    };
+    final reviewable = _selected.where(plannable.contains).toSet();
+    var reviewBytes = 0;
+    if (result != null) {
+      for (final g in result.allGroups) {
+        for (final m in g.removable) {
+          if (reviewable.contains(m.id)) reviewBytes += m.sizeBytes ?? 0;
+        }
+      }
+    }
+
     return Scaffold(
       key: PhotoLibraryPage.pageKey,
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.tokens.surface,
       body: Column(
         children: [
           _Header(
@@ -110,8 +142,25 @@ class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
                 ? AppStrings.libraryCount(state.total)
                 : null,
             onBack: () => context.pop(),
+            onClear: _selected.isEmpty
+                ? null
+                : () => setState(_selected.clear),
           ),
           Expanded(child: _body(state)),
+          if (_hasAccess == true && state.items.isNotEmpty)
+            _SelectionBar(
+              count: _selected.length,
+              reviewCount: reviewable.length,
+              reviewBytes: reviewBytes,
+              onReview: reviewable.isEmpty
+                  ? null
+                  : () {
+                      ref
+                          .read(cleanupPlanProvider.notifier)
+                          .selectOnly(reviewable);
+                      context.push(AppRoutes.cleanupReview);
+                    },
+            ),
         ],
       ),
     );
@@ -163,20 +212,26 @@ class _PhotoLibraryPageState extends ConsumerState<PhotoLibraryPage> {
           crossAxisSpacing: _gap,
         ),
         itemCount: state.items.length,
-        itemBuilder: (context, index) => _Cell(
-          item: state.items[index],
-          onTap: () => _openViewer(index),
-        ),
+        itemBuilder: (context, index) {
+          final item = state.items[index];
+          return _Cell(
+            item: item,
+            selected: _selected.contains(item.id),
+            onTap: () => _openViewer(index),
+            onSelect: () => _toggleSelect(item.id),
+          );
+        },
       ),
     );
   }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.subtitle, required this.onBack});
+  const _Header({required this.subtitle, required this.onBack, this.onClear});
 
   final String? subtitle;
   final VoidCallback onBack;
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
@@ -193,21 +248,21 @@ class _Header extends StatelessWidget {
                 label: AppStrings.back,
                 excludeSemantics: true,
                 child: Material(
-                  color: AppColors.surface,
-                  shape: const CircleBorder(
-                    side: BorderSide(color: AppColors.borderNeutral),
+                  color: context.tokens.surface,
+                  shape: CircleBorder(
+                    side: BorderSide(color: context.tokens.border),
                   ),
                   child: InkWell(
                     customBorder: const CircleBorder(),
                     onTap: onBack,
-                    child: const SizedBox(
+                    child: SizedBox(
                       width: 36,
                       height: 36,
                       child: Center(
                         child: AppSvg(
                           AppAssets.chevronLeft,
                           size: 18,
-                          color: AppColors.titleInk,
+                          color: context.tokens.textPrimary,
                         ),
                       ),
                     ),
@@ -224,13 +279,129 @@ class _Header extends StatelessWidget {
                       header: true,
                       child: Text(
                         AppStrings.photoLibrary,
-                        style: AppText.pageTitle,
+                        style: AppText.custom(18, FontWeight.w600,
+                            context.tokens.textPrimary,
+                            lineHeight: 24, letterSpacing: -0.18),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (subtitle != null)
-                      Text(subtitle!, style: AppText.rowHint),
+                      Text(
+                        subtitle!,
+                        style: AppText.custom(13, FontWeight.w400,
+                            context.tokens.textCaption,
+                            lineHeight: 18),
+                      ),
                   ],
+                ),
+              ),
+              if (onClear != null)
+                GestureDetector(
+                  onTap: onClear,
+                  child: Text(
+                    'Clear selection',
+                    style: AppText.custom(13, FontWeight.w500,
+                        context.tokens.textPrimary,
+                        lineHeight: 18),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Cell extends StatelessWidget {
+  const _Cell({
+    required this.item,
+    required this.selected,
+    required this.onTap,
+    required this.onSelect,
+  });
+
+  final MediaItem item;
+  final bool selected;
+  final VoidCallback onTap;
+  final VoidCallback onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final isVideo = item.kind == MediaKind.video;
+    final kind = isVideo ? AppStrings.video : AppStrings.photoLibrary;
+    return Semantics(
+      button: true,
+      label: '$kind, ${formatShortDate(item.createdAt)}',
+      selected: selected,
+      child: LayoutBuilder(
+        builder: (context, box) => Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          foregroundDecoration: selected
+              ? BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: const Color(0xFF434343), width: 3),
+                )
+              : null,
+          child: Stack(
+            children: [
+              GestureDetector(
+                onTap: onTap,
+                child: MediaThumbnail(
+                  id: item.id,
+                  width: box.maxWidth,
+                  height: box.maxHeight,
+                  radius: 0,
+                  requestSize: 300,
+                ),
+              ),
+              if (isVideo)
+                Positioned(
+                  left: 6,
+                  bottom: 6,
+                  child: IgnorePointer(
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Color(0x99111827),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.play_arrow_rounded,
+                        size: 16,
+                        color: context.tokens.surface,
+                      ),
+                    ),
+                  ),
+                ),
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: onSelect,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    width: 22,
+                    height: 22,
+                    decoration: BoxDecoration(
+                      color: selected ? context.tokens.textPrimary : context.tokens.surface,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: selected
+                            ? context.tokens.border
+                            : context.tokens.borderSoft,
+                        width: 2,
+                      ),
+                    ),
+                    child: selected
+                        ? const Icon(Icons.check,
+                            size: 13, color: Colors.white)
+                        : null,
+                  ),
                 ),
               ),
             ],
@@ -241,52 +412,85 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _Cell extends StatelessWidget {
-  const _Cell({required this.item, required this.onTap});
+class _SelectionBar extends StatelessWidget {
+  const _SelectionBar({
+    required this.count,
+    required this.reviewCount,
+    required this.reviewBytes,
+    required this.onReview,
+  });
 
-  final MediaItem item;
-  final VoidCallback onTap;
+  final int count;
+  final int reviewCount;
+  final int reviewBytes;
+  final VoidCallback? onReview;
 
   @override
   Widget build(BuildContext context) {
-    final isVideo = item.kind == MediaKind.video;
-    final kind = isVideo ? AppStrings.video : AppStrings.photoLibrary;
-    return Semantics(
-      button: true,
-      label: '$kind, ${formatShortDate(item.createdAt)}',
-      excludeSemantics: true,
-      child: GestureDetector(
-        onTap: onTap,
-        child: LayoutBuilder(
-          builder: (context, box) => Stack(
-            children: [
-              MediaThumbnail(
-                id: item.id,
-                width: box.maxWidth,
-                height: box.maxHeight,
-                radius: 0,
-                requestSize: 300,
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    final unplanned = count - reviewCount;
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 12 + bottom),
+      decoration: BoxDecoration(
+        color: context.tokens.surface,
+        border: Border(top: BorderSide(color: context.tokens.border)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            count == 0
+                ? 'Tap a photo for details. Use circles to select.'
+                : '$count photos selected',
+            style: AppText.custom(
+                13, FontWeight.w600, context.tokens.textPrimary,
+                lineHeight: 18),
+          ),
+          if (unplanned > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                'Only photos from your last scan can be reviewed for deletion.',
+                textAlign: TextAlign.center,
+                style: AppText.custom(
+                    11, FontWeight.w400, context.tokens.textCaption,
+                    lineHeight: 16),
               ),
-              if (isVideo)
-                Positioned(
-                  left: 6,
-                  bottom: 6,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Color(0x99111827),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      size: 16,
-                      color: Colors.white,
+            ),
+          const SizedBox(height: 8),
+          Opacity(
+            opacity: onReview == null ? 0.4 : 1,
+            child: Material(
+              color: const Color(0xFF434343),
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onReview,
+                child: SizedBox(
+                  height: 49,
+                  width: double.infinity,
+                  child: Center(
+                    child: Text(
+                      reviewCount == 0
+                          ? 'Review deletion'
+                          : 'Review deletion ($reviewCount · ${formatBytes(reviewBytes)})',
+                      style: AppText.custom(
+                          14, FontWeight.w600, Colors.white,
+                          lineHeight: 18),
                     ),
                   ),
                 ),
-            ],
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 6),
+          Text(
+            'Nothing is deleted until you confirm.',
+            style: AppText.custom(
+                11, FontWeight.w400, context.tokens.textCaption,
+                lineHeight: 16),
+          ),
+        ],
       ),
     );
   }
@@ -323,7 +527,7 @@ class _Message extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AppSvg(AppAssets.image, size: 28, color: AppColors.textMuted),
+            AppSvg(AppAssets.image, size: 28, color: context.tokens.textMuted),
             const SizedBox(height: 16),
             Text(title, textAlign: TextAlign.center, style: AppText.rowTitle),
             const SizedBox(height: 6),

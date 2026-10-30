@@ -68,7 +68,7 @@ class ScanController extends Notifier<ScanState> {
           if (runId != _runId || state.phase != ScanPhase.running) return;
           // Giới hạn tần suất cập nhật để không dựng lại UI quá dày.
           final now = DateTime.now();
-          if (now.difference(_lastEmit) < const Duration(milliseconds: 80)) {
+          if (now.difference(_lastEmit) < const Duration(milliseconds: 200)) {
             return;
           }
           _lastEmit = now;

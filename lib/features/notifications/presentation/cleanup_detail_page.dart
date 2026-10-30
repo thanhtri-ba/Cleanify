@@ -7,6 +7,7 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/utils/format_date.dart';
 import '../../../core/utils/platform_copy.dart';
@@ -80,14 +81,14 @@ class CleanupDetailPage extends ConsumerWidget {
                       Text(
                         s.value,
                         style: AppText.custom(
-                            40, FontWeight.w700, AppColors.titleInk,
+                            40, FontWeight.w700, context.tokens.textPrimary,
                             lineHeight: 46, letterSpacing: -1.2),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         s.unit,
                         style: AppText.custom(
-                            16, FontWeight.w600, AppColors.textMuted),
+                            16, FontWeight.w600, context.tokens.textMuted),
                       ),
                     ],
                   );
@@ -96,7 +97,7 @@ class CleanupDetailPage extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 '${AppStrings.cleanupDetailReclaimed} · ${agoLabel(last.at)}',
-                style: AppText.custom(13, FontWeight.w400, AppColors.textMuted),
+                style: AppText.custom(13, FontWeight.w400, context.tokens.textMuted),
               ),
             ],
           ),
@@ -127,7 +128,7 @@ class CleanupDetailPage extends ConsumerWidget {
               ? AppStrings.storageNoteIos(formatBytes(last.bytes))
               : AppStrings.storageNoteAndroid(formatBytes(last.bytes)),
           textAlign: TextAlign.center,
-          style: AppText.custom(11, FontWeight.w400, AppColors.textMuted,
+          style: AppText.custom(11, FontWeight.w400, context.tokens.textMuted,
               lineHeight: 15),
         ),
       ],
@@ -150,12 +151,12 @@ class _KeyValue extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: AppText.custom(13.5, FontWeight.w400, AppColors.textMuted),
+              style: AppText.custom(13.5, FontWeight.w400, context.tokens.textMuted),
             ),
           ),
           Text(
             value,
-            style: AppText.custom(13.5, FontWeight.w600, AppColors.titleInk),
+            style: AppText.custom(13.5, FontWeight.w600, context.tokens.textPrimary),
           ),
         ],
       ),

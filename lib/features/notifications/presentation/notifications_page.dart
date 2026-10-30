@@ -6,6 +6,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_date.dart';
 import '../../../core/widgets/sub_page_scaffold.dart';
 import '../application/notifications_providers.dart';
@@ -97,7 +98,7 @@ class _NotificationTile extends StatelessWidget {
         children: [
           SubIconTile(
             asset: asset,
-            color: item.critical ? AppColors.error : AppColors.titleInk,
+            color: item.critical ? context.tokens.error : context.tokens.textPrimary,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -109,7 +110,7 @@ class _NotificationTile extends StatelessWidget {
                   style: AppText.custom(
                     14,
                     unread ? FontWeight.w600 : FontWeight.w500,
-                    unread ? AppColors.titleInk : AppColors.textSecondary,
+                    unread ? context.tokens.textPrimary : context.tokens.textSecondary,
                     lineHeight: 19,
                   ),
                 ),
@@ -117,7 +118,7 @@ class _NotificationTile extends StatelessWidget {
                 Text(
                   item.body,
                   style: AppText.custom(
-                      12.5, FontWeight.w400, AppColors.textMuted,
+                      12.5, FontWeight.w400, context.tokens.textMuted,
                       lineHeight: 17),
                 ),
                 if (item.actionLabel != null) ...[
@@ -146,7 +147,7 @@ class _NotificationTile extends StatelessWidget {
                 Text(
                   time,
                   style:
-                      AppText.custom(11, FontWeight.w400, AppColors.textMuted),
+                      AppText.custom(11, FontWeight.w400, context.tokens.textMuted),
                 ),
               if (unread) ...[
                 const SizedBox(height: 6),

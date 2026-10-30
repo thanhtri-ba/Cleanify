@@ -9,6 +9,7 @@ import '../theme/app_text.dart';
 import 'app_svg.dart';
 import 'fade_slide_in.dart';
 import 'primary_button.dart';
+import '../theme/app_tokens.dart';
 
 /// Khung các màn phụ của Home: nút Back tròn, tiêu đề trái, nút phụ bên phải,
 /// phần cuộn và thanh hành động đáy tuỳ chọn.
@@ -53,7 +54,7 @@ class SubPageScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.surface,
+      backgroundColor: context.tokens.surface,
       body: Column(
         children: [
           SafeArea(
@@ -69,21 +70,21 @@ class SubPageScaffold extends StatelessWidget {
                       label: AppStrings.back,
                       excludeSemantics: true,
                       child: Material(
-                        color: AppColors.surface,
-                        shape: const CircleBorder(
-                          side: BorderSide(color: AppColors.borderNeutral),
+                        color: context.tokens.surface,
+                        shape: CircleBorder(
+                          side: BorderSide(color: context.tokens.border),
                         ),
                         child: InkWell(
                           customBorder: const CircleBorder(),
                           onTap: onBack,
-                          child: const SizedBox(
+                          child: SizedBox(
                             width: 36,
                             height: 36,
                             child: Center(
                               child: AppSvg(
                                 AppAssets.chevronLeft,
                                 size: 18,
-                                color: AppColors.titleInk,
+                                color: context.tokens.textPrimary,
                               ),
                             ),
                           ),
@@ -97,7 +98,7 @@ class SubPageScaffold extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.custom(
-                            19, FontWeight.w700, AppColors.titleInk,
+                            19, FontWeight.w700, context.tokens.textPrimary,
                             letterSpacing: -0.2),
                       ),
                     ),
@@ -170,9 +171,9 @@ class SubCard extends StatelessWidget {
     final r = BorderRadius.circular(radius);
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.tokens.surface,
         borderRadius: r,
-        border: Border.all(color: AppColors.borderNeutral),
+        border: Border.all(color: context.tokens.border),
         boxShadow: const [
           BoxShadow(
             color: AppColors.cardShadow,
@@ -204,7 +205,7 @@ class SubPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.iconTile,
+      color: context.tokens.iconTile,
       borderRadius: BorderRadius.circular(9999),
       child: InkWell(
         borderRadius: BorderRadius.circular(9999),
@@ -213,7 +214,7 @@ class SubPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           child: Text(
             label,
-            style: AppText.custom(12.5, FontWeight.w600, AppColors.titleInk),
+            style: AppText.custom(12.5, FontWeight.w600, context.tokens.textPrimary),
           ),
         ),
       ),
@@ -233,7 +234,7 @@ class SubSectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(2, 6, 2, 0),
       child: Text(
         text.toUpperCase(),
-        style: AppText.custom(11, FontWeight.w600, AppColors.textMuted,
+        style: AppText.custom(11, FontWeight.w600, context.tokens.textMuted,
             letterSpacing: 0.8),
       ),
     );
@@ -251,13 +252,13 @@ class SubHint extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
+        color: context.tokens.surfaceMuted,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.divider2),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Text(
         text,
-        style: AppText.custom(12, FontWeight.w400, AppColors.textMuted,
+        style: AppText.custom(12, FontWeight.w400, context.tokens.textMuted,
             lineHeight: 17),
       ),
     );
@@ -271,14 +272,14 @@ class SubIconTile extends StatelessWidget {
     required this.asset,
     this.size = 40,
     this.iconSize = 18,
-    this.color = AppColors.titleInk,
+    this.color,
     this.round = false,
   });
 
   final String asset;
   final double size;
   final double iconSize;
-  final Color color;
+  final Color? color;
   final bool round;
 
   @override
@@ -287,11 +288,12 @@ class SubIconTile extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: AppColors.iconTile,
+        color: context.tokens.iconTile,
         shape: round ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: round ? null : BorderRadius.circular(12),
       ),
-      child: Center(child: AppSvg(asset, size: iconSize, color: color)),
+      child: Center(
+          child: AppSvg(asset, size: iconSize, color: color ?? context.tokens.textPrimary)),
     );
   }
 }
@@ -320,20 +322,20 @@ class SubBigStat extends StatelessWidget {
           children: [
             Text(
               value,
-              style: AppText.custom(34, FontWeight.w700, AppColors.titleInk,
+              style: AppText.custom(34, FontWeight.w700, context.tokens.textPrimary,
                   lineHeight: 38, letterSpacing: -1),
             ),
             const SizedBox(width: 3),
             Text(
               unit,
-              style: AppText.custom(14, FontWeight.w600, AppColors.textMuted),
+              style: AppText.custom(14, FontWeight.w600, context.tokens.textMuted),
             ),
           ],
         ),
         const SizedBox(height: 2),
         Text(
           caption,
-          style: AppText.custom(12.5, FontWeight.w400, AppColors.textMuted,
+          style: AppText.custom(12.5, FontWeight.w400, context.tokens.textMuted,
               lineHeight: 17),
         ),
       ],
@@ -364,24 +366,24 @@ class SubEmpty extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.iconTile,
+              color: context.tokens.iconTile,
               borderRadius: BorderRadius.circular(18),
             ),
             child: Center(
-              child: AppSvg(asset, size: 24, color: AppColors.textMuted),
+              child: AppSvg(asset, size: 24, color: context.tokens.textMuted),
             ),
           ),
           const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: AppText.custom(16, FontWeight.w600, AppColors.titleInk),
+            style: AppText.custom(16, FontWeight.w600, context.tokens.textPrimary),
           ),
           const SizedBox(height: 6),
           Text(
             body,
             textAlign: TextAlign.center,
-            style: AppText.custom(13, FontWeight.w400, AppColors.textMuted,
+            style: AppText.custom(13, FontWeight.w400, context.tokens.textMuted,
                 lineHeight: 18),
           ),
         ],
@@ -402,9 +404,9 @@ class SubBottomBar extends StatelessWidget {
     final inset = MediaQuery.viewPaddingOf(context).bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(16, 10, 16, math.max(12, inset)),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.footerBorder)),
+      decoration: BoxDecoration(
+        color: context.tokens.surface,
+        border: Border(top: BorderSide(color: context.tokens.divider)),
       ),
       child: PrimaryButton(
         label: label,

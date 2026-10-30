@@ -16,7 +16,6 @@ abstract final class AppStrings {
   static const onboarding3Body =
       'Secure sensitive media in an encrypted vault while keeping your storage automatically optimized.';
   static const getStarted = 'Get Started';
-  static const haveAccount = 'I already have an account';
   static const continueLabel = 'Continue';
   static const startFreeTrial = 'Start Free Trial';
   static const restorePurchases = 'Restore Purchases';
@@ -24,91 +23,40 @@ abstract final class AppStrings {
   static const cleanableBadge = '+4.8 GB Cleanable';
 
   // Chung cho form
-  static const emailLabel = 'Email address';
-  static const emailHint = 'you@example.com';
-  static const passwordLabel = 'Password';
-  static const showPassword = 'Show password';
-  static const hidePassword = 'Hide password';
-  static const orContinueWith = 'or continue with';
-  static const continueWithGoogle = 'Continue with Google';
-  static const signInWithApple = 'Sign in with Apple';
-  static const continueWithFacebook = 'Continue with Facebook';
 
   // Sign in
-  static const signInTitle = 'Welcome back';
-  static const signInSubtitle =
-      'Sign in to your Cleanify account. A little less clutter, a little more space.';
-  static const passwordHintSignIn = 'Enter your password';
-  static const forgotPasswordLink = 'Forgot password?';
-  static const signInButton = 'Sign In';
   static const newToCleanify = 'New to Cleanify? ';
-  static const createAccountLink = 'Create account';
   static const privacyReassurance = 'Your media stays yours. Always.';
 
   // Create account
-  static const createTitle = 'Create your account';
-  static const createSubtitle = 'Make room for what matters.';
   static const fullNameLabel = 'Full name';
   static const fullNameHint = 'Your name';
-  static const passwordHintCreate = 'Create a password';
-  static const passwordRule =
-      'Use at least 8 characters, with an uppercase letter, a lowercase letter and a number.';
   static const termsPrefix =
       'By creating an account or continuing with a provider, you agree to our ';
   static const termsOfService = 'Terms of Service';
   static const termsMiddle = ' and acknowledge our ';
   static const privacyPolicy = 'Privacy Policy';
-  static const createButton = 'Create Account';
-  static const alreadyHaveAccount = 'Already have an account? ';
-  static const signInLink = 'Sign in';
 
   // Forgot password
-  static const forgotTitle = 'Forgot your password?';
-  static const forgotSubtitle =
-      'No worries. Enter your account email and we’ll help you reset your password.';
   static const sendResetLink = 'Send Reset Link';
-  static const forgotNote =
-      'Use the email you registered with. For Google, Apple or Facebook accounts, sign in with that provider instead.';
-  static const backToSignInLink = 'Back to sign in';
   // KHÔNG có trong Figma: thông báo sau khi gửi link đặt lại mật khẩu.
   static const resetSent =
       'If an account exists for that email, a reset link is on its way.';
 
   // Verify email
-  static const verifyTitle = 'Check your email';
-  static const verifySubtitle =
-      'One more step to your Cleanify account. Verify your email address to finish signing up.';
-  static const verificationPending = 'Verification pending';
-  static const yourEmailAddress = 'Your email address';
-  static const verifyInstruction =
-      'Look for a Cleanify verification link in your inbox, then return here to sign in.';
-  static const changeEmail = 'Change email';
-  static const verifyNote =
-      'Can’t find it? Check your spam or junk folder, or request another verification email.';
-  static const resendVerification = 'Resend Verification Email';
-  static const backToSignInButton = 'Back to Sign In';
   // KHÔNG có trong Figma.
-  static const verificationSent = 'Verification email sent.';
   static String resendIn(int seconds) => 'Resend in ${seconds}s';
   static const termsUnavailable = 'Terms of Service aren\u2019t available yet.';
 
   // Lỗi (KHÔNG có trong Figma, cần designer xác nhận nội dung và kiểu hiển thị)
-  static const errEmailRequired = 'Enter your email address.';
-  static const errEmailInvalid = 'Enter a valid email address.';
-  static const errPasswordRequired = 'Enter your password.';
   static const errNameRequired = 'Enter your name.';
   static const errNameTooLong = 'That name is too long.';
-  static const errInvalidCredentials = 'Incorrect email or password.';
-  static const errEmailInUse =
-      'An account with this email already exists. Try signing in instead.';
-  static const errEmailNotVerified = 'Please verify your email to continue.';
   static const errNetwork =
       'Can’t connect right now. Check your connection and try again.';
   static const errTooManyRequests =
       'Too many attempts. Please wait a moment and try again.';
   static const errUnknown = 'Something went wrong. Please try again.';
 
-  static const signOut = 'Sign out';
 
   // File access
   static const fileAccessTitle = 'Access your files';
@@ -198,6 +146,7 @@ abstract final class AppStrings {
   static const navHome = 'Home';
   static const navScan = 'Scan';
   static const navStorage = 'Storage';
+  static const navActivity = 'Activity';
   static const navSettings = 'Settings';
   static const backToHome = 'Back to Home';
   static const comingSoon = 'Coming soon';
@@ -210,12 +159,6 @@ abstract final class AppStrings {
 
   // Settings tab
   static const settingsTabBody = 'Make Cleanify work the way you want';
-  static const settingsAccount = 'Account';
-  static const settingsSignIn = 'Sign in';
-  static const settingsSignInBody =
-      'Optional. Your scans and settings stay on this device.';
-  static const settingsSigned = 'Signed in as';
-  static const signedOut = 'Signed out.';
   static const settingsPreferences = 'Preferences';
   static const settingsNotifications = 'Notifications';
   static const settingsNotificationsBody =
@@ -509,4 +452,66 @@ abstract final class AppStrings {
   static const reminderInfoTitle = 'About reminders';
   static const reminderInfoBody =
       'Cleanify currently reminds you only in the app. Periodic push notifications will come in a later update.';
+
+  // Tài khoản & quyền ảnh (Figma 127:2927 – 127:3187)
+  static const pmHeaderTitle = 'Photos & Videos';
+  static const pmExplainTitle = 'Make room for memories';
+  static const pmExplainBody =
+      'Let Cleanify scan your photos and videos to find duplicates and large videos worth reviewing.';
+  static const pmBenefit1Title = 'Find the space you can reclaim';
+  static const pmBenefit1Body = 'Spot similar photos and large videos in your library.';
+  static const pmBenefit2Title = 'Private by design';
+  static const pmBenefit2Body = 'Scanning happens on your device. Your media isn’t uploaded.';
+  static const pmBenefit3Title = 'You decide what goes';
+  static const pmBenefit3Body = 'Nothing is deleted without your explicit confirmation.';
+  static const pmNextIos = 'Next, iOS will ask what Cleanify can access.';
+  static const pmNextAndroid = 'Next, Android will ask what Cleanify can access.';
+  static const pmNotNow = 'Not Now';
+  static const pmLimitedTitle = 'Your selection, your control';
+  static const pmLimitedBody =
+      'Cleanify can scan only the photos and videos you’ve selected. The rest of your library stays out of reach.';
+  static const pmLimitedBadge = 'Limited access';
+  static const pmLimitedStatus = 'Selected only';
+  static const pmScopeCardTitle = 'Photos & videos';
+  static const pmLimitedScopeTitle = 'Scan your selected media';
+  static const pmLimitedScopeBody =
+      'Duplicate checks and large-video results include only the items you’ve shared.';
+  static const pmLimitedNote =
+      'Missing something from the scan? Add more photos or videos to your selection at any time.';
+  static const pmManageSelected = 'Manage Selected Media';
+  static const pmContinueSelected = 'Continue with Selected Media';
+  static const pmDeniedTitle = 'Photo access is off';
+  static const pmDeniedBody =
+      'Cleanify can’t scan your photos or videos until you allow access. You can change this in Settings.';
+  static const pmDeniedBadge = 'Access denied';
+  static const pmDeniedFeatureTitle = 'Media cleanup is unavailable';
+  static const pmDeniedFeatureBody =
+      'Duplicate photo checks, large-video scans and media cleanup recommendations are paused.';
+  static const pmDeniedStepIosTitle = 'Allow access in iOS Settings';
+  static const pmDeniedStepIosBody = 'Cleanify → Photos → choose limited or full access.';
+  static const pmDeniedStepAndroidTitle = 'Allow access in Settings';
+  static const pmDeniedStepAndroidBody = 'Permissions → Photos and videos → allow access.';
+  static const pmDeniedNote =
+      'You can still view storage summaries, adjust app settings and get support without photo access.';
+  static const pmOpenSettings = 'Open Settings';
+  static const pmContinueWithoutAccess = 'Continue Without Access';
+  static const reclaimNotScannedTitle = 'Run your first scan';
+  static const reclaimNotScannedBody =
+      'Find duplicate photos, similar shots and large videos that take up space.';
+  static const reclaimStartScan = 'Start scan';
+  static const reclaimScanningTitle = 'Scanning your library…';
+  static const reclaimScanningBody =
+      'This can take a moment. You can keep using Cleanify.';
+  static const reclaimNothingTitle = 'Nothing to clean right now';
+  static const reclaimNothingBody =
+      'Your last scan found no duplicates, similar shots or large videos.';
+  static const reclaimScanAgain = 'Scan again';
+  static const reclaimReview = 'Review & clean';
+  static const reclaimLabel = 'Can be freed';
+  static const shortcutNotifications = 'Alerts';
+  static String reclaimItemsReady(int n) => '$n items ready to review';
+  static String storageUsedOf(String used, String total) => '$used of $total used';
+  static String itemsAndSize(int n, String size) => '$n items · $size';
+  static String freedSize(String size) => '$size can be freed';
+  static String itemsCount(int n) => '$n items';
 }

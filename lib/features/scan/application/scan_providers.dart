@@ -63,8 +63,10 @@ class ThumbnailRequest {
 }
 
 /// Ảnh thu nhỏ để hiển thị; null nếu không tải được.
+// autoDispose: ô không còn trên màn hình thì giải phóng ảnh, tránh thư viện lớn
+// giữ hàng nghìn thumbnail trong RAM và gây giật.
 final thumbnailProvider =
-    FutureProvider.family<Uint8List?, ThumbnailRequest>((ref, request) async {
+    FutureProvider.autoDispose.family<Uint8List?, ThumbnailRequest>((ref, request) async {
   try {
     final entity = await AssetEntity.fromId(request.id);
     return await entity?.thumbnailDataWithSize(

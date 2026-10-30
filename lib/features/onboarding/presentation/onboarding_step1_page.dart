@@ -5,6 +5,7 @@ import '../../../core/l10n/app_strings.dart';
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/widgets/primary_button.dart';
 import 'onboarding_parts.dart';
 
@@ -29,11 +30,11 @@ class OnboardingStep1Page extends StatelessWidget {
           text: AppStrings.onboarding1Title,
           maxWidth: 296,
         ),
-        const OnboardingBody(
+        OnboardingBody(
           top: 572,
           text: AppStrings.onboarding1Body,
           sidePadding: 56,
-          color: AppColors.textBody,
+          color: context.tokens.textSecondary,
         ),
         const OnboardingDots(top: 682, index: 0),
         Rise(
@@ -44,24 +45,10 @@ class OnboardingStep1Page extends StatelessWidget {
           child: PrimaryButton(
             label: AppStrings.getStarted,
             height: 58,
-            color: AppColors.cta,
+            color: context.tokens.cta,
             labelStyle: AppText.ctaLabel,
             prominentShadow: true,
             onPressed: () => context.push(AppRoutes.onboarding2),
-          ),
-        ),
-        Rise(
-          index: 5,
-          top: 782,
-          left: 20,
-          right: 20,
-          height: 40,
-          // Đăng nhập là tùy chọn: mở màn đăng nhập mà không đánh dấu đã xem
-          // onboarding, để người dùng quay lại vẫn thấy luồng giới thiệu.
-          child: OnboardingTextAction(
-            label: AppStrings.haveAccount,
-            style: AppText.subtleLink,
-            onTap: () => context.push(AppRoutes.signIn),
           ),
         ),
       ],

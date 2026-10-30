@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
 import 'press_scale.dart';
+import '../theme/app_tokens.dart';
 
 /// Nút nền trắng có viền, đi cùng [PrimaryButton] (Back, Skip for now...).
 class SecondaryButton extends StatelessWidget {
@@ -14,7 +14,7 @@ class SecondaryButton extends StatelessWidget {
     this.height = 52,
     this.labelStyle,
     this.radius = 16,
-    this.borderColor = AppColors.border,
+    this.borderColor,
     this.shadows,
   });
 
@@ -23,17 +23,17 @@ class SecondaryButton extends StatelessWidget {
   final double height;
   final TextStyle? labelStyle;
   final double radius;
-  final Color borderColor;
+  final Color? borderColor;
   final List<BoxShadow>? shadows;
 
   @override
   Widget build(BuildContext context) {
     final borderRadius = BorderRadius.circular(radius);
     Widget button = Material(
-      color: AppColors.surface,
+      color: context.tokens.surface,
       shape: RoundedRectangleBorder(
         borderRadius: borderRadius,
-        side: BorderSide(color: borderColor),
+        side: BorderSide(color: borderColor ?? context.tokens.border),
       ),
       child: InkWell(
         borderRadius: borderRadius,

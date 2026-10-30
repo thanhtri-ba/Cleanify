@@ -39,6 +39,9 @@ class PhotoManagerMediaSource implements MediaSource {
 
   @override
   Future<int> count() async {
+    // Mỗi lượt quét lấy lại album và ảnh; không dùng bản cũ còn giữ từ lượt trước.
+    _root = null;
+    _entities.clear();
     final root = await _library();
     if (root == null) return 0;
     try {

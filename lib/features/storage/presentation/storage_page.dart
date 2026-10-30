@@ -9,12 +9,11 @@ import '../../../core/router/app_routes.dart';
 import '../../../core/theme/app_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
-import '../../../core/widgets/app_bottom_nav.dart';
 import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/primary_button.dart';
-import '../../../core/widgets/tab_scaffold.dart';
 import '../../scan/application/scan_controller.dart';
 import '../../scan/application/scan_providers.dart';
 import '../../scan/domain/device_storage.dart';
@@ -36,15 +35,32 @@ class StoragePage extends ConsumerWidget {
     final bottom =
         math.max(24.0, MediaQuery.viewPaddingOf(context).bottom + 16);
 
-    return TabScaffold(
+    return Scaffold(
       key: pageKey,
-      current: AppTab.storage,
-      onScan: () => startScanFlow(context, ref),
+      backgroundColor: context.tokens.surface,
       body: SafeArea(
         bottom: false,
         child: ListView(
           padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
           children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Material(
+                  color: context.tokens.surfaceMuted,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: () => context.canPop() ? context.pop() : context.go(AppRoutes.home),
+                    child: SizedBox(
+                      width: 40,
+                      height: 40,
+                      child: Icon(Icons.arrow_back_ios_new,
+                          size: 16, color: context.tokens.textPrimary),
+                    ),
+                  ),
+                ),
+            ),
+            const SizedBox(height: 8),
             Text(AppStrings.navStorage, style: AppText.h1),
             const SizedBox(height: 4),
             Text(AppStrings.storageTabBody, style: AppText.captionSecondary),
@@ -67,16 +83,16 @@ class StoragePage extends ConsumerWidget {
               isLoading: scanning,
               gradient: AppColors.ctaGradient,
               onPressed: scanning ? null : () => startScanFlow(context, ref),
-              leading: const AppSvg(
+              leading: AppSvg(
                 AppAssets.scanTarget,
                 size: 18,
-                color: Colors.white,
+                color: context.tokens.surface,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               AppStrings.freeUpSpace,
-              style: AppText.custom(15, FontWeight.w700, AppColors.titleInk),
+              style: AppText.custom(15, FontWeight.w700, context.tokens.textPrimary),
             ),
             const SizedBox(height: 10),
             FadeSlideIn(
@@ -234,12 +250,12 @@ class _CapacityCard extends StatelessWidget {
                         child: FractionallySizedBox(
                           widthFactor: value,
                           heightFactor: 1,
-                          child: const DecoratedBox(
+                          child: DecoratedBox(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
                                   Color(0xFF7FA8FF),
-                                  Color(0xFFFFFFFF),
+                                  context.tokens.surface,
                                 ],
                               ),
                             ),
@@ -292,16 +308,16 @@ class _StorageErrorCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.tokens.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.borderNeutral),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             AppStrings.storageUnavailable,
-            style: AppText.custom(14, FontWeight.w500, AppColors.textSecondary,
+            style: AppText.custom(14, FontWeight.w500, context.tokens.textSecondary,
                 lineHeight: 20),
           ),
           const SizedBox(height: 8),
@@ -324,19 +340,19 @@ class _TileGroup extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: context.tokens.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.borderNeutral),
+        border: Border.all(color: context.tokens.border),
       ),
       child: Column(
         children: [
           for (var i = 0; i < children.length; i++) ...[
             if (i > 0)
-              const Divider(
+              Divider(
                 height: 1,
                 thickness: 1,
                 indent: 64,
-                color: AppColors.divider,
+                color: context.tokens.divider,
               ),
             children[i],
           ],
@@ -374,7 +390,7 @@ class _StorageTile extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.iconTile,
+                  color: context.tokens.iconTile,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -398,10 +414,10 @@ class _StorageTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const AppSvg(
+              AppSvg(
                 AppAssets.chevronRight,
                 size: 14,
-                color: AppColors.textMuted,
+                color: context.tokens.textMuted,
               ),
             ],
           ),

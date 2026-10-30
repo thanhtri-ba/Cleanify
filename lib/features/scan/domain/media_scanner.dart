@@ -8,6 +8,7 @@ import 'hash_store.dart';
 import 'media_item.dart';
 import 'media_source.dart';
 import 'pdq.dart';
+import 'pdq_bk_tree.dart';
 import 'scan_models.dart';
 import 'union_find.dart';
 
@@ -247,7 +248,8 @@ class MediaScanner {
       }
       await _saveRows(toSave);
       toSave.clear();
-      await _pruneCache(all);
+      // Chỉ dọn cache khi đã liệt kê đủ ảnh; liệt kê thiếu thì giữ nguyên hash cũ.
+      if (all.length >= total) await _pruneCache(all);
       hashes.sort((a, b) => _oldestFirst(a.item, b.item));
 
       // 5. Ảnh trùng: cùng SHA-256 nghĩa là cùng nội dung từng byte.
@@ -259,7 +261,8 @@ class MediaScanner {
       for (final same in bySha.values.where((l) => l.length >= 2)) {
         check();
         final ordered = [...same]..sort(_oldestFirst);
-        duplicates.add(MediaGroup(id: 'dup_${ordered.first.id}', items: ordered));
+        duplicates
+            .add(MediaGroup(id: 'dup_${ordered.first.id}', items: ordered));
         inDuplicates.addAll(ordered.map((e) => e.id));
       }
       duplicates.sort(_groupsBySavings);
@@ -270,10 +273,9 @@ class MediaScanner {
 
       // 6. Ảnh tương tự: PDQ gần nhau, và ORB khớp theo hình học (bắt ảnh cắt
       // và che). Ảnh đã nằm trong nhóm trùng thì bỏ qua.
-      final pool = [
-        for (final h in hashes)
-          if (!inDuplicates.contains(h.id)) h,
-      ];
+      // Ảnh trùng vẫn được so tương tự để một lượt quét đã đủ. Màn xóa không
+      // cho chọn bản giữ của một nhóm để xóa qua nhóm khác (xem cleanup_plan).
+      final pool = hashes;
       final clusters = await _similarClusters(pool, check);
       for (var i = 0; i < clusters.length; i++) {
         check();
@@ -289,6 +291,14 @@ class MediaScanner {
       await _release();
 
       markDone([ScanCategory.duplicates, ScanCategory.similar]);
+      // Chẩn đoán: in một dòng tóm tắt để đối chiếu với kết quả trên màn hình.
+      // ignore: avoid_print
+      print('[scan] ảnh=${photos.length} băm=${hashes.length} lỗi=${failed.length} '
+          'pdq_đủ_chất_lượng=${hashes.where((h) => h.pdq != null && h.pdq!.quality >= config.pdqMinQuality).length} '
+          'nhóm_trùng=${duplicates.length} nhóm_tương_tự=${similar.length} '
+          'trong_kho=${cached.length} liệt_kê=${all.length}/$total '
+          'orb=${hashes.where((h) => h.features != null).length} '
+          'matcher=${matcher == null ? 'không' : 'có'}');
       fraction = 1;
       return finish(ScanEnd.completed);
     } on _CancelledSignal {
@@ -325,9 +335,8 @@ class MediaScanner {
     final digest = await sha256.bind(counted).first;
 
     final luma = await source.lumaGrid(item);
-    final pdq = luma == null || luma.length != lumaGridSize
-        ? null
-        : pdqFromLuma(luma);
+    final pdq =
+        luma == null || luma.length != lumaGridSize ? null : pdqFromLuma(luma);
     final features = matcher == null ? null : await source.featureSet(item);
     return _PhotoHash(
       item.withSize(size),
@@ -435,40 +444,18 @@ class MediaScanner {
     UnionFind sets,
     void Function() check,
   ) async {
-    final eligible = [
-      for (var i = 0; i < pool.length; i++)
-        if (pool[i].pdq != null && pool[i].pdq!.quality >= config.pdqMinQuality)
-          i,
-    ];
-    final buckets = <int, List<int>>{};
-    for (var e = 0; e < eligible.length; e++) {
-      final bytes = pool[eligible[e]].pdq!.bytes;
-      for (var b = 0; b < pdqBytes; b++) {
-        buckets.putIfAbsent(b * 256 + bytes[b], () => []).add(eligible[e]);
+    // Tìm đủ mọi cặp trong ngưỡng bằng cây BK: không bỏ bucket nào, không so
+    // toàn bộ n² cặp. Mỗi ảnh chỉ được so với các ảnh đã thêm trước nó.
+    final tree = PdqBkTree();
+    var step = 0;
+    for (var i = 0; i < pool.length; i++) {
+      final ph = pool[i].pdq;
+      if (ph == null || ph.quality < config.pdqMinQuality) continue;
+      for (final j in tree.query(ph, config.pdqMaxDistance)) {
+        sets.union(i, j);
       }
-      if (e % 500 == 0) {
-        check();
-        await Future<void>.delayed(Duration.zero);
-      }
-    }
-
-    final seen = <int>{};
-    var processed = 0;
-    for (final members in buckets.values) {
-      if (members.length < 2 || members.length > config.pdqMaxBucketSize) {
-        continue;
-      }
-      for (var x = 0; x < members.length; x++) {
-        for (var y = x + 1; y < members.length; y++) {
-          final i = members[x];
-          final j = members[y];
-          if (!seen.add(i * pool.length + j)) continue;
-          if (pool[i].pdq!.distanceTo(pool[j].pdq!) <= config.pdqMaxDistance) {
-            sets.union(i, j);
-          }
-        }
-      }
-      if (++processed % 200 == 0) {
+      tree.add(ph, i);
+      if (++step % 500 == 0) {
         check();
         await Future<void>.delayed(Duration.zero);
       }
@@ -509,8 +496,7 @@ class MediaScanner {
         if (sets.find(i) == sets.find(j)) continue;
         final key = math.min(e, c) * eligible.length + math.max(e, c) as int;
         if (!tried.add(key)) continue;
-        if (matcher.inliers(features[e], features[c]) >=
-            config.orbMinInliers) {
+        if (matcher.inliers(features[e], features[c]) >= config.orbMinInliers) {
           sets.union(i, j);
         }
       }
