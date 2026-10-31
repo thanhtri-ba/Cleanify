@@ -41,7 +41,7 @@ class MediaThumbnail extends ConsumerWidget {
             switchInCurve: Curves.easeOut,
             child: bytes == null
                 ? ColoredBox(
-                    key: ValueKey('placeholder'),
+                    key: const ValueKey('placeholder'),
                     color: context.tokens.chip,
                   )
                 : Image.memory(

@@ -411,7 +411,7 @@ class _Dots extends StatelessWidget {
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: i == active ? context.tokens.surface : Color(0x66FFFFFF),
+                color: i == active ? context.tokens.surface : const Color(0x66FFFFFF),
               ),
             ),
         ],

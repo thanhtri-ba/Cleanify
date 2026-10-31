@@ -389,8 +389,8 @@ class _Insight extends StatelessWidget {
           Row(
             children: [
               Icon(Icons.auto_awesome, size: 13, color: context.tokens.textPrimary),
-              SizedBox(width: 6),
-              Text(
+              const SizedBox(width: 6),
+              const Text(
                 'SMART INSIGHT',
                 style: TextStyle(
                   fontSize: 10,
@@ -411,7 +411,7 @@ class _Insight extends StatelessWidget {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                const Text(
                   'Review duplicates',
                   style: TextStyle(
                     fontSize: 11,
@@ -419,7 +419,7 @@ class _Insight extends StatelessWidget {
                     color: _ink,
                   ),
                 ),
-                SizedBox(width: 5),
+                const SizedBox(width: 5),
                 AppSvg(AppAssets.arrowRight, size: 12, color: context.tokens.textPrimary),
               ],
             ),
@@ -467,8 +467,8 @@ class _StickyBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.folder_open_outlined, size: 18, color: Colors.white),
-                SizedBox(width: 9),
+                const Icon(Icons.folder_open_outlined, size: 18, color: Colors.white),
+                const SizedBox(width: 9),
                 Text(
                   'Explore Files',
                   style: TextStyle(

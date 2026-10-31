@@ -69,7 +69,7 @@ class AboutPage extends ConsumerWidget {
                                   color: context.tokens.textPrimary,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Installed version $_version',
                                 style: TextStyle(fontSize: 13, color: context.tokens.textMuted),

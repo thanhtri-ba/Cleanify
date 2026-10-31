@@ -379,7 +379,7 @@ class _Thumb extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: focused ? Color(0xFF676767) : context.tokens.border,
+                color: focused ? const Color(0xFF676767) : context.tokens.border,
                 width: focused ? 2 : 1,
               ),
             ),
@@ -401,7 +401,7 @@ class _Thumb extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 6),
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: removed ? Color(0xFF1B1B1B) : context.tokens.surface,
+                        color: removed ? const Color(0xFF1B1B1B) : context.tokens.surface,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
@@ -518,7 +518,7 @@ class _Button extends StatelessWidget {
     return Opacity(
       opacity: onPressed == null ? 0.4 : 1,
       child: Material(
-        color: filled ? Color(0xFF676767) : context.tokens.surface,
+        color: filled ? const Color(0xFF676767) : context.tokens.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -556,7 +556,7 @@ class _DeleteConfirmSheet extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 32),
       decoration: BoxDecoration(
         color: context.tokens.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,

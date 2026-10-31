@@ -166,7 +166,7 @@ class SettingsPage extends ConsumerWidget {
       ),
       builder: (sheetContext) => SafeArea(
         child: Padding(
-          padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,7 +179,7 @@ class SettingsPage extends ConsumerWidget {
                   color: context.tokens.textPrimary,
                 ),
               ),
-              SizedBox(height: 12),
+              const SizedBox(height: 12),
               Text(
                 'Deletion always asks for your confirmation first. '
                 'Nothing is removed until you review the selection and confirm.',

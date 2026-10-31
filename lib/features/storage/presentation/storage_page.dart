@@ -254,7 +254,7 @@ class _CapacityCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Color(0xFF7FA8FF),
+                                  const Color(0xFF7FA8FF),
                                   context.tokens.surface,
                                 ],
                               ),

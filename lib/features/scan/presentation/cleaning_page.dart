@@ -359,7 +359,7 @@ class _VortexPainter extends CustomPainter {
       100,
       Paint()
         ..shader = RadialGradient(
-          colors: [ink.withOpacity(0.08), ink.withOpacity(0.0)],
+          colors: [ink.withValues(alpha: 0.08), ink.withValues(alpha: 0.0)],
         ).createShader(Rect.fromCircle(center: c, radius: 100)),
     );
 
@@ -367,7 +367,7 @@ class _VortexPainter extends CustomPainter {
     final arm = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = muted.withOpacity(0.28);
+      ..color = muted.withValues(alpha: 0.28);
     for (var k = 0; k < 3; k++) {
       final path = Path();
       for (var j = 0; j <= 40; j++) {
@@ -428,11 +428,11 @@ class _VortexPainter extends CustomPainter {
       if (prevP > 0) {
         trail
           ..strokeWidth = dia * 0.6
-          ..color = muted.withOpacity(alpha * 0.3);
+          ..color = muted.withValues(alpha: alpha * 0.3);
         canvas.drawLine(_pos(i, prevP, c), pos, trail);
       }
 
-      tile.color = (i % 3 == 0 ? ink : muted).withOpacity(alpha);
+      tile.color = (i % 3 == 0 ? ink : muted).withValues(alpha: alpha);
       canvas.save();
       canvas.translate(pos.dx, pos.dy);
       canvas.rotate(i * 0.7 + p * 2);

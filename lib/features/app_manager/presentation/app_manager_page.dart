@@ -343,7 +343,7 @@ class _InfoCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(Icons.info_outline_rounded, size: 16, color: context.tokens.textSecondary),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: Text(
             'Apps don’t report how much space they use, so each row counts the photos and videos saved from that app.',

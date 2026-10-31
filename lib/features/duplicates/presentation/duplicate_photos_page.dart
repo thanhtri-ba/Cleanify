@@ -207,7 +207,7 @@ class _DuplicatePhotosPageState extends ConsumerState<DuplicatePhotosPage> {
               padding: const EdgeInsets.fromLTRB(20, 13, 20, 12),
               decoration: BoxDecoration(
                 color: context.tokens.surface,
-                border: Border(top: BorderSide(color: Color(0xF2E8E8E8))),
+                border: const Border(top: BorderSide(color: Color(0xF2E8E8E8))),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,

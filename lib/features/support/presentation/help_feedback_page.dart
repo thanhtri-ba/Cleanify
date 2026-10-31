@@ -319,7 +319,7 @@ class _Field extends StatelessWidget {
             color: context.tokens.surface,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-                color: error == null ? context.tokens.border : Color(0xFF4D4D4D)),
+                color: error == null ? context.tokens.border : const Color(0xFF4D4D4D)),
           ),
           child: TextField(
             controller: controller,

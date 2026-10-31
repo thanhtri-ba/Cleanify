@@ -28,7 +28,7 @@ class SmartScanPage extends ConsumerStatefulWidget {
 }
 
 class _SmartScanPageState extends ConsumerState<SmartScanPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   /// Chu kỳ 24s (chậm hơn để dễ theo dõi); các nhịp đều là bội số nguyên của chu kỳ nên lặp liền mạch.
   late final AnimationController _loop = AnimationController(
     vsync: this,
@@ -97,7 +97,7 @@ class _SmartScanPageState extends ConsumerState<SmartScanPage>
   /// Tiến độ hiển thị: số % chạy 1→100%, các hạng mục lần lượt xong theo cùng nhịp.
   ScanProgress _displayProgress(ScanProgress real) {
     final f = _sweep.value.clamp(0.0, 1.0);
-    const n = ScanCategory.values.length;
+    final n = ScanCategory.values.length;
     final statuses = <ScanCategory, CategoryStatus>{};
     for (final (i, c) in ScanCategory.values.indexed) {
       final start = i / n;

@@ -12,7 +12,6 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../core/utils/format_bytes.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
-import '../../../core/widgets/app_svg.dart';
 import '../../../core/widgets/fade_slide_in.dart';
 import '../../../core/widgets/primary_button.dart';
 import '../../../core/widgets/tab_scaffold.dart';
